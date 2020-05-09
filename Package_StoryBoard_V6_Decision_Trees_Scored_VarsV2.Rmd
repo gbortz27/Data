@@ -1,0 +1,2686 @@
+---
+title: "Package Prop"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: columns
+    vertical_layout: fill
+---
+
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+library(readr)
+library(dplyr)
+#library(leaflet)
+library(DT)
+library(tidyverse)
+library(lubridate)
+library(plotly)
+library(crosstalk)
+library(ggplot2)
+library(corrplot)
+library(caret)
+library(caTools)
+library(pROC)
+library(ineq)
+library(forcats)
+library(DT)
+library(skimr)
+library(rpart)
+library(caret)
+library(rpart.plot)
+library(ROCR)
+library(e1071)
+library(caTools)
+#getwd()
+Package_200K_Sample_Numeric_3=readRDS("./Data/Package_200K_Sample_Numeric_3.RDS")
+Package_200K_Sample_Factor=readRDS("./Data/Package_200K_Sample_Factor.RDS")
+#trips_df <- read_csv('https://assets.datacamp.com/production/repositories/1448/datasets/1f12031000b09ad096880bceb61f6ca2fd95e2eb/sanfran_bikeshare_joined_oneday.csv')
+```
+
+
+
+Group0:Data and Summary (Numeric){data-navmenu=VarExplorer}
+===================================================
+
+Data and Summary
+----------------------------------------------------------
+
+### Data Summary
+
+```{r Data Summary}
+summary_Data=skim(Package_200K_Sample_Numeric_3)
+datatable(summary_Data)
+
+```
+
+### Data Sample 100
+
+```{r Data Sample 100}
+Package_100_Sample_Numeric_3=sample_n(Package_200K_Sample_Numeric_3,100)
+# #
+#
+# #
+datatable(Package_100_Sample_Numeric_3)
+#
+```
+
+
+
+Group1:Cust_Age/Acc_Age{data-navmenu=VarExplorer}
+===================================================
+
+Customer Age Raw (Before and After)
+----------------------------------------------------------
+
+### Customer Age Raw Distribution
+
+```{r Cust Age Raw}
+# Comp_PropOwner_Dist_df=readRDS("Comp_PropOwner_Dist_df.RDS")
+# #
+# # Prepare for Plotly 
+# #
+# Comp_PropOwner_Dist_df$Train_Score=as.factor(Comp_PropOwner_Dist_df$Train_Score)
+# Comp_PropOwner_Dist_df$PROP_OWNR_IND=fct_rev( fct_reorder(Comp_PropOwner_Dist_df$PROP_OWNR_IND,Comp_PropOwner_Dist_df$CountN_pc))
+# 
+# plotly_Property=ggplot(Comp_PropOwner_Dist_df,aes(x=PROP_OWNR_IND,y=CountN_pc,fill=Train_Score))+geom_col(position="dodge")+scale_fill_discrete(name="TrainScore") +labs(title="Train Vs Score on Property Indicator ", subtitle = "Note the difference in the Null Level Contribution,(NULL was NB as Predictor in Model) ", x="Categories in Property Ownership Predictor", y="% of Category" )
+# 
+# ggplotly(plotly_Property)
+# 
+# 
+
+
+ggplotly_Raw_Age=ggplot(Package_200K_Sample_Numeric_3,aes(x=CUST_AGE,color=as.factor(PACKAGE_IND)))+geom_density()+labs(title="Age Distribution By Package Indicator")
+#
+ggplotly(ggplotly_Raw_Age)
+
+
+```
+
+### Customer Age Discretized
+
+```{r Cust Age Discrete}
+# 
+
+#                                      Recategorization For  Cust Age  / Call it Custage New
+# 
+Package_200K_Sample_Numeric_3=Package_200K_Sample_Numeric_3 %>% mutate(Cust_Age_New=
+                                                                         case_when(
+                                                                           CUST_AGE <= 50 ~ "LOW",
+                                                                           TRUE ~ "HIGH"
+                                                                         )) 
+# Check to see if the Distributions of the Cust Age wrt Device Ind are as predicted
+#
+Table_Age_Vs_Dev_Ind=table(Package_200K_Sample_Numeric_3$Cust_Age_New,Package_200K_Sample_Numeric_3$PACKAGE_IND)
+#chisq.test(Table_Age_Vs_Dev_Ind)
+#
+# 	Pearson's Chi-squared test with Yates' continuity correction
+# 
+# data:  Table_Age_Vs_Dev_Ind
+# X-squared = 4497.7, df = 1, p-value < 2.2e-16
+#
+Table_Age_Vs_Dev_Ind_df=data.frame(Table_Age_Vs_Dev_Ind)
+#
+# Now We plot the distribution of the New Variable 
+#
+ggplotly_Age_Recat=ggplot(Table_Age_Vs_Dev_Ind_df,aes(x=Var1,y=Freq,fill=as.factor(Var2)))+geom_col(position="dodge")+labs(title="Customer_Age_New By Package Indicator")
+
+ggplotly(ggplotly_Age_Recat)
+
+```
+
+
+Account Age Raw and Processed
+----------------------------------------------------------
+
+### Raw Acc Age 
+
+```{r Raw Acc Age}
+
+##########################################################################################################################
+#                                                                    RAW ACCOUNT AGE M  
+#
+ggplotly_Raw_Acc_Age=ggplot(Package_200K_Sample_Numeric_3,aes(x=ACC_AGE_M,color=as.factor(PACKAGE_IND)))+geom_density()+labs(title="ACC AGE Distribution By Package Indicator")
+ggplotly(ggplotly_Raw_Acc_Age)
+```
+
+
+
+### Acc Age Discretized
+
+```{r Acc Age Discrete}
+
+#  We now Separate at 175 - Visible from the above density plot 
+#
+Package_200K_Sample_Numeric_3=Package_200K_Sample_Numeric_3 %>% mutate(Acc_Age_New=
+                                                                         case_when(
+                                                                           ACC_AGE_M <= 175 ~ "LOW",
+                                                                           TRUE ~ "HIGH"
+                                                                         )) 
+# Check to see if the Distributions of the Cust Age wrt Device Ind are as predicted
+#
+Table_Acc_Age_Vs_Dev_Ind=table(Package_200K_Sample_Numeric_3$Acc_Age_New,Package_200K_Sample_Numeric_3$PACKAGE_IND)
+#chisq.test(Table_Acc_Age_Vs_Dev_Ind)
+#
+# 	Pearson's Chi-squared test with Yates' continuity correction
+# 
+# data:  Table_Age_Vs_Dev_Ind
+# X-squared = 4497.7, df = 1, p-value < 2.2e-16
+#
+#
+#
+#chisq.test(Table_Acc_Age_Vs_Dev_Ind)
+# 
+# 	Pearson's Chi-squared test with Yates' continuity correction
+# 
+# data:  Table_Acc_Age_Vs_Dev_Ind
+# X-squared = 2489.8, df = 1, p-value < 2.2e-16
+Table_Acc_Age_Vs_Dev_Ind_df=data.frame(Table_Acc_Age_Vs_Dev_Ind)
+#
+# Now We plot the distribution of the New Variable 
+#
+ggplotly_Acc_Age_Discrete=ggplot(Table_Acc_Age_Vs_Dev_Ind_df,aes(x=Var1,y=Freq,fill=as.factor(Var2)))+geom_col(position="dodge")+labs(title="Acc_Age_New By Package Indicator")
+
+
+ggplotly(ggplotly_Acc_Age_Discrete)
+
+
+
+
+
+```
+
+
+
+Group2:Credit Limit / Monthly Income{data-navmenu=VarExplorer}
+===================================================
+
+Credit Limit Raw / Zoomed / Discretized
+----------------------------------------------------------
+
+### Credit Limit Raw
+
+```{r Credit Limit Raw }
+ggplotly_CR_LIM_Raw=ggplot(Package_200K_Sample_Numeric_3,aes(x=CR_LIM_AMT,color=as.factor(PACKAGE_IND)))+geom_density()+labs(title="CR_LIM_AMT Distribution By Package Indicator")
+#
+ggplotly(ggplotly_CR_LIM_Raw)
+# 
+# 
+
+
+```
+
+
+### Credit Limit Zoomed
+
+```{r Credit Limit Zoomed }
+#                                                   SOME WORK NEEDS TO BE DOBE ON CREDIT LIMIT AMOUNT
+#
+CR_Lim_Zoomed=ggplot(Package_200K_Sample_Numeric_3,aes(x=CR_LIM_AMT,color=as.factor(PACKAGE_IND)))+geom_density()+labs(title="CR_LIM_AMT Distribution  By Package Indicator Zoomed",subtitle="Note the 1 crossover @ Loans > -2500 ",x="Credit_Limit") + coord_cartesian(xlim = c(-2500, 0))
+# 
+ggplotly(CR_Lim_Zoomed)
+# 
+# 
+
+
+```
+
+### Credit Limit Discretized
+
+```{r Credit Limit Discretized }
+Package_200K_Sample_Numeric_3=Package_200K_Sample_Numeric_3 %>% mutate(CR_LIM_AMT_New=
+                                                                         case_when(
+                                                                           CR_LIM_AMT <= -500 ~ "HIGH",
+                                                                           TRUE ~ "LOW"
+                                                                         )) 
+
+Table_CR_LIM_AMT_Vs_Dev_Ind=table(Package_200K_Sample_Numeric_3$CR_LIM_AMT_New,Package_200K_Sample_Numeric_3$PACKAGE_IND)
+#chisq.test(Table_CR_LIM_AMT_Vs_Dev_Ind)
+#
+# 	Pearson's Chi-squared test with Yates' continuity correction
+# 
+# data:  Table_Age_Vs_Dev_Ind
+# X-squared = 4497.7, df = 1, p-value < 2.2e-16
+#
+#
+#
+#chisq.test(Table_Acc_Age_Vs_Dev_Ind)
+# 
+# 	Pearson's Chi-squared test with Yates' continuity correction
+# 
+# data:  Table_Acc_Age_Vs_Dev_Ind
+# X-squared = 2489.8, df = 1, p-value < 2.2e-16
+Table_CR_LIM_AMT_Vs_Dev_Ind_df=data.frame(Table_CR_LIM_AMT_Vs_Dev_Ind)
+#
+# Now We plot the distribution of the New Variable 
+#
+CR_Lim_Discrete=ggplot(Table_CR_LIM_AMT_Vs_Dev_Ind_df,aes(x=Var1,y=Freq,fill=as.factor(Var2)))+geom_col(position="dodge")+labs(title="CR_LIM_AMT_New Distribution By Package Indicator")
+#
+ggplotly(CR_Lim_Discrete)
+# #
+
+```
+
+
+Monthly Income Raw / Zoomed / Discretized
+----------------------------------------------------------
+
+### Monthly Income Raw
+
+```{r Monthly Income Raw}
+#                                                  MONTHLY INCOME AMOUNT NEEDS SOME WORK at BELOW 50K
+#
+Mnth_Inc_Raw=ggplot(Package_200K_Sample_Numeric_3,aes(x=MONTHLY_INCOME_AMT,color=as.factor(PACKAGE_IND)))+geom_density()+labs(title="MONTHLY INCOME AMOUNT  Distribution By Package Indicator")
+#
+#  Lets change the x axis so we can get the intervals 
+# ggplotly(plotly_Education)
+# #
+
+ggplotly(Mnth_Inc_Raw)
+
+
+```
+
+
+
+### Monthly Income Zoomed
+
+```{r Monthly Income Zoomed}
+Mnth_Inc_Zoomed=ggplot(Package_200K_Sample_Numeric_3,aes(x=MONTHLY_INCOME_AMT,color=as.factor(PACKAGE_IND)))+geom_density()+labs(title="MONTHLY_INCOME_AMT Distribution  By Package Indicator",subtitle="Note the Drop off in Pcakages as the income gets lower  ") + coord_cartesian(xlim = c(0, 200000))
+#
+ggplotly(Mnth_Inc_Zoomed)
+# #
+
+
+```
+
+
+
+### Monthly Income Discretized
+
+```{r  CCDA_L12M}
+
+Package_200K_Sample_Numeric_3=Package_200K_Sample_Numeric_3 %>% mutate(MONTHLY_INCOME_AMT_New=
+                                                                         case_when(
+                                                                           MONTHLY_INCOME_AMT <= 50000 ~ "LOW",
+                                                                           TRUE ~ "HIGH"
+                                                                         )) 
+
+Table_MONTHLY_INCOME_AMT_Vs_Dev_Ind=table(Package_200K_Sample_Numeric_3$MONTHLY_INCOME_AMT_New,Package_200K_Sample_Numeric_3$PACKAGE_IND)
+#chisq.test(Table_MONTHLY_INCOME_AMT_Vs_Dev_Ind)
+#
+# 	Pearson's Chi-squared test with Yates' continuity correction
+# 
+# data:  Table_MONTHLY_INCOME_AMT_Vs_Dev_Ind
+# X-squared = 389.56, df = 1, p-value < 2.2e-16
+#
+#
+#
+Table_MONTHLY_INCOME_AMT_Vs_Dev_Ind_df=data.frame(Table_MONTHLY_INCOME_AMT_Vs_Dev_Ind)
+#
+# Now We plot the distribution of the New Variable 
+#
+Mnth_Inc_Discrete=ggplot(Table_MONTHLY_INCOME_AMT_Vs_Dev_Ind_df,aes(x=Var1,y=Freq,fill=as.factor(Var2)))+geom_col(position="dodge")+labs(title="MONTHLY_INCOME_AMT_New Distribution By Package Indicator")
+#
+# 
+ggplotly(Mnth_Inc_Discrete)
+# 
+
+
+
+```
+
+
+Group3:Max Float5 / SugDoDay/ Reward Level {data-navmenu=VarExplorer}
+===================================================
+
+Max Float5  Raw / Zoomed / Discretized
+----------------------------------------------------------
+
+### Max Float5 Raw
+
+```{r Max Float5 Raw }
+#                                                           MAX FLOAT 5 ( Needs some work in the quanbtization)
+#
+MaxFloat5_Raw=ggplot(Package_200K_Sample_Numeric_3,aes(x=MAX_FLOAT5,color=as.factor(PACKAGE_IND)))+geom_density()+labs(title="MAX FLOAT5  Distribution By Package Indicator")
+#
+#
+ggplotly(MaxFloat5_Raw)
+# 
+# 
+
+
+```
+
+
+### Max Float5 Zoomed
+
+```{r Max Float5 Zoomed }
+#                                                   SOME WORK NEEDS TO BE DOBE ON CREDIT LIMIT AMOUNT
+# OUTLIERS
+#
+Float5_Zoomed=ggplot(Package_200K_Sample_Numeric_3,aes(x=MAX_FLOAT5,color=as.factor(PACKAGE_IND)))+geom_density()+labs(title="MAX_FLOAT5 Distribution  By Package Indicator",subtitle="Note the Uptake  in Pcakages as the max float gets lower   ") + coord_cartesian(xlim = c(0, 200000))
+# 
+ggplotly(Float5_Zoomed)
+# 
+# 
+
+
+```
+
+### Max Float5 Discretized
+
+```{r Max Float5 Discretized }
+# BASED ON THE INDICATOR MAX FLOAT 5 , SWITCHES AT 75K 
+#
+Package_200K_Sample_Numeric_3=Package_200K_Sample_Numeric_3 %>% mutate(MAX_FLOAT5_New=
+                                                                         case_when(
+                                                                           MAX_FLOAT5 <= 75000 ~ "LOW",
+                                                                           TRUE ~ "HIGH"
+                                                                         )) 
+Table_MAX_FLOAT5_Vs_Dev_Ind=table(Package_200K_Sample_Numeric_3$MAX_FLOAT5_New,Package_200K_Sample_Numeric_3$PACKAGE_IND)
+#chisq.test(Table_MAX_FLOAT5_Vs_Dev_Ind)
+#
+# 	Pearson's Chi-squared test with Yates' continuity correction
+# 
+# data:  Table_MAX_FLOAT5_Vs_Dev_Ind
+# X-squared = 492.91, df = 1, p-value < 2.2e-16
+#
+Table_MAX_FLOAT5_Vs_Dev_Ind_df=data.frame(Table_MAX_FLOAT5_Vs_Dev_Ind)
+#
+# Now We plot the distribution of the New Variable 
+#
+Float5_Discrete=ggplot(Table_MAX_FLOAT5_Vs_Dev_Ind_df,aes(x=Var1,y=Freq,fill=as.factor(Var2)))+geom_col(position="dodge")+labs(title="MAX_FLOAT5_New Distribution By Package Indicator")
+
+#
+ggplotly(Float5_Discrete)
+# #
+
+```
+
+
+
+
+SugDoDay  Raw / Sug Do Day Discrete / Reward Level Raw
+----------------------------------------------------------
+
+### SugDoDay  Raw
+
+```{r SugDoDay Raw }
+
+Package_200K_Sample_Numeric_3$SUG_DO_DAY=as.factor(as.character(Package_200K_Sample_Numeric_3$SUG_DO_DAY))
+#dim(Package_200K_Sample_Numeric_3)
+#unique(Package_200K_Sample_Numeric_3$SUG_DO_DAY)
+
+SugDoDay_Counts_df =data.frame(table(Package_200K_Sample_Numeric_3$SUG_DO_DAY,Package_200K_Sample_Numeric_3$PACKAGE_IND))
+SugDoDay_Counts_df_ord=SugDoDay_Counts_df%>%arrange(desc(Freq))
+SugDoDay_Counts_df_ord$Var1=fct_rev(fct_reorder(SugDoDay_Counts_df_ord$Var1,SugDoDay_Counts_df_ord$Freq))
+
+SugDoDay_Raw=ggplot(SugDoDay_Counts_df_ord,aes(x=Var1,y=Freq,fill=Var2))+geom_col(position="dodge")+labs(title="SugDoDay Original",
+                                                                                            subtitle="Too Many Categories - Needs Discretization",
+                                                                                            x="SugDoDay Categories") +
+  scale_fill_discrete(name="Package")
+#
+ggplotly(SugDoDay_Raw)
+# 
+# 
+
+
+```
+
+
+### SugDoDay  Discete
+
+```{r SugDoDay  Discete }
+SugDoDay_Counts_df_ord=SugDoDay_Counts_df_ord%>%mutate(Var1_New=fct_other(Var1,
+                                                   keep=c(20,15)))
+
+
+
+#SugDoDay_Counts_df_ord$Var1=fct_collapse(SugDoDay_Counts_df_ord$Var1,G20=c("20"),group_other = TRUE)
+
+SugDoDay_Counts_df_ord_2=SugDoDay_Counts_df_ord%>%
+  group_by(Var1_New,Var2)%>%
+  summarize(Tot_Freq=sum(Freq))%>%mutate(sum_Freq=sum(Tot_Freq))%>%
+  ungroup()%>%mutate(sumTot=sum(Tot_Freq))%>%mutate(pc_of_Category=round(Tot_Freq/sum_Freq,2))
+#
+SugDoDay_Discrete=ggplot(SugDoDay_Counts_df_ord_2,aes(x=Var1_New,y=Tot_Freq,fill=Var2))+geom_col(position="dodge")+labs(title="SugDoDay Important Levels",x="Fewer Levels")+scale_fill_discrete(name="Package")
+ggplotly(SugDoDay_Discrete)
+# 
+# 
+
+
+```
+
+### Reward Level Raw
+
+```{r Reward Level Raw }
+############################################################################################################################
+#                     REWARD LEVEL AS ABOVE WE NEED TO MAKE A FACTOR  AND SO AS SUG DO DAY - LEAVE LEVELS AS IS ASTERe IS A CHANGE , #   Gradually To Suit Packages
+# 
+#unique(Package_200K_Sample_Numeric_3$REWARD_LEVEL)
+#[1] 0 4 3 5 1 2
+#
+# We now do a 2 D table By Reward lelvel and
+#
+Package_200K_Sample_Numeric_3$REWARD_LEVEL=as.factor(Package_200K_Sample_Numeric_3$REWARD_LEVEL)
+#
+Reward_Level_df=data.frame(table(Package_200K_Sample_Numeric_3$REWARD_LEVEL,Package_200K_Sample_Numeric_3$PACKAGE_IND))
+#
+# Lets Do the Aggregations
+#
+Reward_Level_df_Agg=Reward_Level_df%>%
+  group_by(Var1,Var2)%>%
+  summarize(sumFreq=sum(Freq))
+
+Reward_Level_Raw=ggplot(Reward_Level_df_Agg,aes(Var1,sumFreq,fill=Var2))+geom_col(position="dodge")+
+  labs(title="Original Reward Levels",subtitle="Note the Inversions",x="Remaining Important Categories ")+
+  scale_fill_discrete("Package")
+                                                                                                         
+                                                                                                         
+#
+#
+ggplotly(Reward_Level_Raw)
+# #
+
+```
+
+Group4:Data and Summary (Factors){data-navmenu=VarExplorer}
+===================================================
+
+Data and Summary
+----------------------------------------------------------
+
+### Data Summary
+
+```{r Data Summary Factors}
+summary_Data_Factors=skim(Package_200K_Sample_Factor)
+datatable(summary_Data_Factors)
+
+```
+
+### Data Sample Factors 100
+
+```{r Data Sample Factors 100}
+Package_100_Sample_Factors_3=sample_n(Package_200K_Sample_Factor,100)
+# #
+#
+# #
+datatable(Package_100_Sample_Factors_3)
+#
+```
+
+
+Group5: Occupation / High Level Edu{data-navmenu=VarExplorer}
+===================================================
+
+Occupation Raw / Occupation After
+----------------------------------------------------------
+
+### Occupation Raw
+
+```{r Occupation Raw }
+#                                           CUST OCPTN CDE
+#
+#  We PLOT THE DISTRIBUUTION WITH A BAR PLOT 
+#
+# WE CAN FIRST LOOK AT A TABLE
+#
+Table_Occup_Vs_Package_Ind=table(Package_200K_Sample_Factor$CUST_OCPTN_CDE,Package_200K_Sample_Factor$PACKAGE_IND)
+#
+Table_Occup_Vs_Package_Ind_df=as.data.frame(Table_Occup_Vs_Package_Ind)
+#
+Occupation_Raw=ggplot(Table_Occup_Vs_Package_Ind_df,aes(x=(fct_reorder(Var1,Freq)),y=Freq,fill=as.factor(Var2)))+
+  geom_col(position="dodge")+labs(title="Occupation Raw Vs Package Indicator",x="Occupation")+
+  scale_fill_discrete(name="Package")+coord_flip()
+#
+ggplotly(Occupation_Raw)
+# 
+# 
+
+
+```
+
+
+### Occupation Discrete
+
+```{r Occupation Discrete }
+#
+#                       DISCETIZATIONPROCEDURE 
+#
+Mat_Table_Occup_Vs_Package_Ind=as.matrix(Table_Occup_Vs_Package_Ind)
+#Mat_Table_Occup_Vs_Package_Ind
+#
+# WE TEST FOR A HIGH RATIO
+#
+DF_Occ_Vs_Package_Ind=as.data.frame(Mat_Table_Occup_Vs_Package_Ind)
+DF_Occ_Vs_Package_Ind=data.frame('X0'=Mat_Table_Occup_Vs_Package_Ind[,1],'X1'=Mat_Table_Occup_Vs_Package_Ind[,2])
+#class(DF_Occ_Vs_Package_Ind)
+rownames_DF_Occ_Vs_Package_Ind=rownames(DF_Occ_Vs_Package_Ind)
+#
+# Add a Column Where the ratios are measured and if above 1 , are given HIGH or low 
+#
+# We find where the Occupation is a high ration or low ratio
+#
+DF_Occ_Vs_Package_Ind=DF_Occ_Vs_Package_Ind%>%mutate(Ratio=ifelse(DF_Occ_Vs_Package_Ind$X0==0,"High",
+                                                            ifelse(DF_Occ_Vs_Package_Ind$X1/DF_Occ_Vs_Package_Ind$X0>1,"High","Low")))
+ind_high=which(DF_Occ_Vs_Package_Ind$Ratio=="High")
+ind_low=which(DF_Occ_Vs_Package_Ind$Ratio=="Low")
+#
+#
+Occup_High=rownames_DF_Occ_Vs_Package_Ind[ind_high]
+# [1] "CE" "DP" "DR" "F2" "FC" "FE" "FN" "FO" "FV" "FW" "GU" "KY" "LA" "ME" "MO" "NS" "OF" "OW" "PG" "PR" "SB" "SE" "SG" "SL" "SR" "SS"
+# [27] "TF" "ZZ
+Occup_Low=rownames_DF_Occ_Vs_Package_Ind[ind_low]
+# [1] "CM" "CR" "EX" "F1" "F3" "F4" "FA" "FB" "FD" "FG" "FI" "FJ" "FK" "FL" "FM" "FP" "FQ" "FR" "FT" "FU" "FX" "FY" "FZ" "HW" "MA" "MI"
+# [27] "MN" "MP" "NB" "NR" "PB" "PE" "PL" "PM" "RE" "RT" "SA" "SC" "SK" "SM" "ST" "SU" "TR" "UN"
+#
+# 
+# Lets recode the data frame in High Low
+#
+Table_Occup_Vs_Package_Ind_df=as.data.frame(Table_Occup_Vs_Package_Ind)
+#
+# We now recode Var 1
+#
+Table_Occup_Vs_Package_Ind_df=Table_Occup_Vs_Package_Ind_df%>%mutate(Var1_New=
+                                                                 case_when (
+                                                                   Var1 %in% Occup_Low ~ "Low",
+                                                                   TRUE ~ "High"
+                                                                 ))
+#
+# Now we do a Group By For Plotting and the table for Chisq
+#
+OccUpation_Df_Sum=Table_Occup_Vs_Package_Ind_df%>% group_by(Var1_New,Var2)%>%
+  summarize(Tot_Freq=sum(Freq))
+
+# Var1_New
+# <chr>
+# Var2
+# <fctr>
+# Tot_Freq
+# <int>
+# High	0	57687		
+# High	1	66908		
+# Low	0	42313		
+# Low	1	33092
+
+Occupation_Discrete=ggplot(OccUpation_Df_Sum,aes(x=Var1_New,y=Tot_Freq,fill=Var2))+geom_col(position="dodge")             + labs(title="Occupation Vs Package Indicator After Discretization",x="Occupation Levels")+
+          scale_fill_discrete(name="Package")
+#
+# Now we look at the ChiSquare of New Variables in the original Data Set 
+#
+# First Create the new field as per rtyhe table field ie CUST_OCPTN_CDE_New
+#
+Package_200K_Sample_Factor=Package_200K_Sample_Factor%>%mutate(CUST_OCPTN_CDE_New=
+                                                                 case_when (
+                                                                   CUST_OCPTN_CDE %in% Occup_Low ~ "Low",
+                                                                   TRUE ~ "High"
+                                                                 ))
+ # Now we have a table 
+
+Table_Package_200K_Sample_Factor_OccNewVsPackage_Ind=table(Package_200K_Sample_Factor$CUST_OCPTN_CDE_New,Package_200K_Sample_Factor$PACKAGE_IND)
+
+#chisq.test(Table_Package_200K_Sample_Factor_OccNewVsPackage_Ind)
+#
+# data:  Table_Package_200K_Sample_Factor_OccNewVsPackage_Ind
+# X-squared = 1809.6, df = 1, p-value < 2.2e-16
+#
+# 
+ggplotly(Occupation_Discrete)
+# 
+# 
+
+
+```
+
+
+
+High Edu Level Raw / High Edu Level After 
+----------------------------------------------------------
+
+### High Edu Level Raw
+
+```{r High Edu Level Raw }
+#                                       HIGH EDUCATION LEVEL
+#
+#                                                              
+#NOW WE DO SEX CODE 
+#   THERE ARE MINIMAL LEVELS - LETS JUST GET A TABLE AND CHECK CHI SQ AND PLOT 
+#
+Table_High_Ed_Level_Vs_Package_Ind=table(Package_200K_Sample_Factor$HIGH_EDU_LVL,Package_200K_Sample_Factor$PACKAGE_IND)
+chisq_Edu_Lvl=chisq.test(Table_High_Ed_Level_Vs_Package_Ind)
+Total_Obs=sum(Table_High_Ed_Level_Vs_Package_Ind)
+Table_High_Ed_Level_Vs_Package_Ind_dframe=as.data.frame(Table_High_Ed_Level_Vs_Package_Ind)
+#
+High_Edu_Lvls_Orig=ggplot(Table_High_Ed_Level_Vs_Package_Ind_dframe,aes(x=(fct_reorder(Var1,Freq)),y=Freq,fill=Var2))+
+  geom_col(position="dodge")+coord_flip()+labs(title="Original High Ed Levels (Too Many)",x="High Edu Levels")+scale_fill_discrete(name="Package")
+#
+#
+ggplotly(High_Edu_Lvls_Orig)
+# 
+# 
+
+
+```
+
+
+### High Edu Level After
+
+```{r High Edu Level After }
+#                                   SOME WORK NEEDS TO BE DOBE ON Edu Levels
+Table_High_Ed_Level_Vs_Package_Ind_df=cbind.data.frame(var_names=row.names(Table_High_Ed_Level_Vs_Package_Ind),"X0"=Table_High_Ed_Level_Vs_Package_Ind[,1],"X1"=Table_High_Ed_Level_Vs_Package_Ind[,2])
+
+Table_High_Ed_Level_Vs_Package_Ind_df=Table_High_Ed_Level_Vs_Package_Ind_df%>%mutate(Edu_Lvl_New=ifelse(X0+X1<0.05*Total_Obs,"Other",as.character(var_names)))
+#
+Table_High_Ed_Level_Vs_Package_Ind_df$Edu_Lvl_New=as.factor(Table_High_Ed_Level_Vs_Package_Ind_df$Edu_Lvl_New)
+#
+Ind_Other=which(Table_High_Ed_Level_Vs_Package_Ind_df$Edu_Lvl_New=="Other")
+#
+Edu_Lvls_Other=Table_High_Ed_Level_Vs_Package_Ind_df$var_names[Ind_Other]
+#
+# Now we add an extra Col Var1_New with New Name
+#
+Table_High_Ed_Level_Vs_Package_Ind_dframe=Table_High_Ed_Level_Vs_Package_Ind_dframe%>%
+  mutate(Var1_New=ifelse(Var1 %in% Edu_Lvls_Other,"Other",(as.character(Var1))))
+Table_High_Ed_Level_Vs_Package_Ind_dframe$Var1_New=as.factor(Table_High_Ed_Level_Vs_Package_Ind_dframe$Var1_New)
+
+                                                                                               
+# Graph top see New Levels and Their relative quantities Vs Package Level
+
+High_Edu_Lvls_New=ggplot(Table_High_Ed_Level_Vs_Package_Ind_dframe,aes(x=fct_rev(fct_reorder(Var1_New,Freq)),y=Freq,fill=Var2))+
+  geom_col(position="dodge")+labs(title="New Education Categories Vs Package Uptake",x="New Edu Levels")+
+  scale_fill_discrete(name="Package")
+
+# Replace the New Levels in tjhe original file in the Factor Frame
+
+Package_200K_Sample_Factor=Package_200K_Sample_Factor%>%mutate(Edu_Lvl_New=
+                                                                 case_when (
+                                                                HIGH_EDU_LVL %in% Edu_Lvls_Other ~ "Other",
+                                                                TRUE ~ as.character(HIGH_EDU_LVL)
+                                                                 ))
+ggplotly(High_Edu_Lvls_New)
+# 
+# 
+
+
+```
+
+
+
+
+
+Group6: INS / Sex Property Province Total {data-navmenu=VarExplorer}
+===================================================
+
+INS_BA / Sex
+----------------------------------------------------------
+
+### INS_BA
+
+```{r INS BA }
+#                                                     INS_BA_IND
+#
+Table_INS_BA_IND_Vs_Package_Ind=table(Package_200K_Sample_Factor$INS_BA_IND,Package_200K_Sample_Factor$PACKAGE_IND)
+chisq_INS_BA_IND=chisq.test(Table_INS_BA_IND_Vs_Package_Ind)
+#
+# 	Pearson's Chi-squared test with Yates' continuity correction
+# 
+# data:  Table_INS_BA_IND_Vs_Package_Ind
+# X-squared = 2908.4, df = 1, p-value < 2.2e-16
+#
+#                                         THIS IS GIVING AN INVERSION SO IS USEFUL USE AS IS 
+#
+Table_INS_BA_IND_Vs_Package_Ind_df=as.data.frame(Table_INS_BA_IND_Vs_Package_Ind)
+#
+INS_BA_IND=ggplot(Table_INS_BA_IND_Vs_Package_Ind_df,aes(x=fct_rev(fct_reorder(Var1,Freq)),y=Freq,fill=Var2))+
+  geom_col(position="dodge") + labs(title="INS_BA_IND Vs Package Ind (Note Inversion)",x="INS_BA_IND")+
+  scale_fill_discrete(name="Package")
+#
+ggplotly(INS_BA_IND)
+# 
+# 
+
+
+```
+
+
+### CUST_SEX_CDE
+
+```{r CUST_SEX_CDE }
+#                                                              "CUST_SEX_CDE"
+#NOW WE DO SEX CODE 
+#   THERE ARE MINIMAL LEVELS - LETS JUST GET A TABLE AND CHECK CHI SQ AND PLOT 
+#
+Table_Sex_Vs_Package_Ind=table(Package_200K_Sample_Factor$CUST_SEX_CDE,Package_200K_Sample_Factor$PACKAGE_IND)
+#
+#      0     1
+# F 52666 47660
+# M 47334 52340
+#
+chisq_MaleVsFemale=chisq.test(Table_Sex_Vs_Package_Ind)
+#chisq_MaleVsFemale
+#
+# 	Pearson's Chi-squared test with Yates' continuity correction
+# 
+# data:  Table_Sex_Vs_Package_Ind
+# X-squared = 501.01, df = 1, p-value < 2.2e-16
+#
+# ChiSq sigb=nificant ---  Leave as Is
+#
+Table_Sex_Vs_Package_Ind_df=as.data.frame(Table_Sex_Vs_Package_Ind)
+#
+#Table_Sex_Vs_Package_Ind_df
+#
+#  Now we Graph It 
+#
+CUST_SEX_CODE=ggplot(Table_Sex_Vs_Package_Ind_df,aes(x=Var1,y=Freq,fill=Var2))+geom_col(position="dodge")+
+  labs(title="Cust Sex Code Vs Package Indicator", x="Male/Female") + scale_fill_discrete(name="Package")
+#
+ggplotly(CUST_SEX_CODE)
+# 
+# 
+
+
+```
+
+
+INS_CLP / Property
+----------------------------------------------------------
+
+### INS_CLP
+
+```{r INS CLP }
+#                                           INS_CLP_IND
+#
+Table_INS_CLP_IND_Vs_Package_Ind=table(Package_200K_Sample_Factor$INS_CLP_IND,Package_200K_Sample_Factor$PACKAGE_IND)
+#chisq_INS_CLP_IND=chisq.test(Table_INS_CLP_IND_Vs_Package_Ind)
+#
+# 	Pearson's Chi-squared test with Yates' continuity correction
+# 
+# data:  Table_INS_BA_IND_Vs_Package_Ind
+# X-squared = 2908.4, df = 1, p-value < 2.2e-16
+#
+#                                          
+#
+Table_INS_CLP_IND_Vs_Package_Ind_df=as.data.frame(Table_INS_CLP_IND_Vs_Package_Ind)
+#
+INS_CLP_IND=ggplot(Table_INS_CLP_IND_Vs_Package_Ind_df,aes(x=fct_rev(fct_reorder(Var1,Freq)),y=Freq,fill=Var2))+
+  geom_col(position="dodge") + labs(title="INS CLP IND Vs Package Indicator",x="INS_CLP_IND") +
+  scale_fill_discrete(name="Package")
+
+ggplotly(INS_CLP_IND)
+# 
+```
+
+
+### Property
+
+```{r PROP IND }
+#                                   NEXT IS PROP OWNER INDICATOR ---  Is Good , Few Levels So leave as Is 
+Table_High_Prop_Vs_Package_Ind=table(Package_200K_Sample_Factor$PROP_OWNR_IND,Package_200K_Sample_Factor$PACKAGE_IND)
+chisq_High_Prop=chisq.test(Table_High_Prop_Vs_Package_Ind)
+# 	Pearson's Chi-squared test
+# 
+# data:  Table_High_Prop_Vs_Package_Ind
+# X-squared = 271.08, df = 3, p-value < 2.2e-16
+# #str(Package_200K_Sample_Factor$PROP_OWNR_IND)
+#
+#                              LETS GRAPH THIS VARIABLE-PROP OWNER INDICATOR
+#
+#    MAKE AS A DATAFRAME
+#
+Table_High_Prop_Vs_Package_Ind_df=as.data.frame(Table_High_Prop_Vs_Package_Ind)
+
+PROP_IND=ggplot(Table_High_Prop_Vs_Package_Ind_df,aes(x=fct_rev(fct_reorder(Var1,Freq)),y=Freq,fill=Var2))+
+  geom_col(position="dodge") + labs(title="Property_Ind Vs Package_Ind",x="Property Ind") +
+  scale_fill_discrete(name="Package")
+#
+ggplotly(PROP_IND)
+# 
+# 
+
+
+```
+
+INS_ST / Province
+----------------------------------------------------------
+
+### INS_ST
+
+```{r INS ST }
+#                                         
+#                                                   "INS_ST_IND"
+#
+Table_INS_ST_IND_Vs_Package_Ind=table(Package_200K_Sample_Factor$INS_ST_IND,Package_200K_Sample_Factor$PACKAGE_IND)
+#chisq_INS_ST_IND=chisq.test(Table_INS_ST_IND_Vs_Package_Ind)
+#
+# 	Pearson's Chi-squared test with Yates' continuity correction
+# 
+# data:  Table_INS_ST_IND_Vs_Package_Ind
+# X-squared = 1378.3, df = 1, p-value < 2.2e-16
+#
+#                                          
+#
+Table_INS_ST_IND_Vs_Package_Ind_df=as.data.frame(Table_INS_ST_IND_Vs_Package_Ind)
+#
+INS_ST_IND=ggplot(Table_INS_ST_IND_Vs_Package_Ind_df,aes(x=fct_rev(fct_reorder(Var1,Freq)),y=Freq,fill=Var2))+              geom_col(position="dodge") + labs(title="INS_ST_IND Vs Package Ind",x="INST_IND")+
+           scale_fill_discrete(name="Package")
+              
+#
+ggplotly(INS_ST_IND)
+# 
+# 
+
+
+```
+
+
+### Province
+
+```{r Province }
+#                                           Province
+#
+#                                                   "PROVINCE_GROUPING"
+#
+Table_Province_Grouping=table(Package_200K_Sample_Factor$PROVINCE_GROUPING,Package_200K_Sample_Factor$PACKAGE_IND)
+#
+#chisq.test(Table_Province_Grouping)
+#
+# data:  Table_Province_Grouping
+# X-squared = 477.56, df = 9, p-value < 2.2e-16
+#
+# Lets Leave Province As IS AS THERE ARE VERY LITTLE DISCRIMINATORY POWERS amongst all the Provinces - leave it
+#
+Table_Province_Grouping_df=as.data.frame(Table_Province_Grouping)
+#
+Province=ggplot(Table_Province_Grouping_df,aes(x=(fct_reorder(Var1,Freq)),y=Freq,fill=Var2))+ geom_col(position="dodge") + labs(title="Province Vs Package Ind",x="Property Indicator") +
+  coord_flip() + scale_fill_discrete(name="Package")
+#
+ggplotly(Province)
+# 
+# 
+
+
+```
+
+
+
+INS_PLP / Total
+----------------------------------------------------------
+
+### INS_PLP
+
+```{r INS PLP }
+#                                             "INS_PLP_IND"
+#
+Table_INS_PLP_IND_Vs_Package_Ind=table(Package_200K_Sample_Factor$INS_PLP_IND,Package_200K_Sample_Factor$PACKAGE_IND)
+chisq_INS_PLP_IND=chisq.test(Table_INS_PLP_IND_Vs_Package_Ind)
+#
+# 	Pearson's Chi-squared test with Yates' continuity correction
+# 
+# data:  Table_INS_ST_IND_Vs_Package_Ind
+# X-squared = 1378.3, df = 1, p-value < 2.2e-16
+#
+#                                          
+#
+Table_INS_PLP_IND_Vs_Package_Ind_df=as.data.frame(Table_INS_PLP_IND_Vs_Package_Ind)
+#
+INS_PLP=ggplot(Table_INS_PLP_IND_Vs_Package_Ind_df,aes(x=fct_rev(fct_reorder(Var1,Freq)),y=Freq,fill=Var2))+
+  geom_col(position="dodge")+labs(title="INS_PLP Vs Pacakage Ind",x="INS_PLP_IND")+
+  scale_fill_discrete(name="Package")
+#
+#
+ggplotly(INS_PLP)
+# 
+# 
+
+
+```
+
+
+### Total
+
+```{r Total }
+#                                           ToTal
+#
+#  We PLOT THE DISTRIBUUTION WITH A BAR PLOT 
+#
+# WE CAN FIRST LOOK AT A TABLE
+#
+Table_Subs_Vs_Package_Ind=table(Package_200K_Sample_Factor$PACKAGE_IND)
+#
+Table_Subs_Vs_Package_Ind_df=as.data.frame(Table_Subs_Vs_Package_Ind)
+#
+Subs_Vs_Package_Ind=ggplot(Table_Subs_Vs_Package_Ind_df,aes(x=Var1,y=Freq,fill=Var1))+
+  geom_col(position="dodge")+labs(title="Total Subs Vs Package Indicator",x="Package_Ind")+
+  scale_fill_discrete(name="Package")
+#
+ggplotly(Subs_Vs_Package_Ind)
+# 
+# 
+
+
+```
+
+
+
+
+Group7: Variable/Categorical Importance {data-navmenu=VarExplorer}
+===================================================
+
+Variable Importance (Table and Plot)
+----------------------------------------------------------
+
+### Variable Importance Table
+
+```{r Variable Importance Table }
+#
+# Retrive the Variable Importance Data Frame
+#
+varImp_Results=readRDS("./Data/varImp_Results.RDS")
+
+varImp_Results$Overall=round(varImp_Results$Overall,2)
+
+datatable(varImp_Results)
+
+
+```
+
+
+### Variable Importance Plot
+
+```{r Variable Importance Plot }
+
+varImp_Results_df=cbind(Variables=rownames(varImp_Results),varImp_Results)
+
+Varimp_plot=ggplot(varImp_Results_df,aes(x=fct_reorder(Variables,Overall),y=Overall,fill=Overall))+
+  geom_col(position="dodge")+coord_flip()+theme(legend.position = "none")+
+  labs(title = "Variable Importance Plot", x="Variables", y="importance Level")
+
+ggplotly(Varimp_plot)
+```
+
+
+
+Categorical Importance (Table and Plot) 
+----------------------------------------------------------
+
+### Categorical Importance Table
+
+```{r Categorical Importance }
+#                                       
+Importance=readRDS("./Data/glm_model_Importance.RDS")
+
+Importance_df=cbind(Categories=rownames(Importance$importance),Importance$importance)
+#
+Importance_df=Importance_df%>%arrange(desc(Overall))
+#
+Importance_df$Overall=round(Importance_df$Overall,2)
+datatable(Importance_df)
+
+
+
+```
+
+
+### Categorical Importance Plot
+
+```{r Categorical Importance Plot }
+
+
+Cat_Imp_plot=ggplot(Importance_df,aes(x=fct_reorder(Categories,Overall),y=Overall,fill=Overall))+
+  geom_col(position="dodge")+coord_flip()+theme(legend.position = "none")+
+  labs(title = "Category Importance Plot", x="Variables", y="importance Level")
+
+
+ggplotly(Cat_Imp_plot)
+# 
+# 
+
+
+```
+
+
+
+
+######################################################################################################
+P6:Post_Scoring GLMs
+=======================================================================
+
+
+CM Final_w_LM12 {data-width=350}
+-----------------------------------------------------------------------
+
+### Full Final_w_LM12 Matrix: Balanced
+
+```{r Full Final_w_LM12 Matrix 2}
+
+# ConfMatrix_Full_GLM_NewData_V2=readRDS("ConfMatrix_Full_GLM_NewData_V2.RDS")
+# ConfMatrix_Full_GLM_NewData_V2
+
+```
+
+### Final_CM_w_0_LM12
+
+```{r w_0_LM12}
+
+# ConfMatrix_Full_GLM_NewData_V3=readRDS("ConfMatrix_Full_GLM_NewData_V3.RDS")
+# ConfMatrix_Full_GLM_NewData_V3
+
+###################################################################################
+#    PRODUCE AN AUC
+#
+#library(pROC)
+# testset_Full_GLM_UnBal=readRDS("testset_Full_GLM_UnBal.RDS")
+# p_class_Full_GLM_UnBal=readRDS("p_class_Full_GLM_UnBal.RDS")
+# roc=roc(p_class_Full_GLM_UnBal,as.numeric(testset_Full_GLM_UnBal))
+# auc(roc)
+# 
+# library(ineq)
+# Gini_Coeff=round(2*auc(roc) -1,2)
+# 
+# print(paste0("Gini_Coeff=",Gini_Coeff))
+# #Gini_Coeff
+# #0.926
+#
+#
+
+```
+
+
+AUC and Gini w_LM12 GLM  {data-width=300}
+-----------------------------------------------------------------------
+
+
+### Final GLM_w_LM12 AUC Value Box Bal 3
+
+```{r Full GLM_w_LM12 AUC Value Box Bal 3}
+
+library(pROC)
+# p_class_Full_GLM_Bal_NewData_V2=p_class
+# testsetFull_GLM_Bal_NewData_V2=as.numeric(testset_ModelV2[["SDV_INDICATOR"]])
+# saveRDS(p_class_Full_GLM_Bal_NewData_V2,"p_class_Full_GLM_Bal_NewData_V2.RDS")
+# saveRDS(testsetFull_GLM_Bal_NewData_V2,"testsetFull_GLM_Bal_NewData_V2.RDS")
+# roc=roc(p_class_Full_GLM_Bal_NewData_V2,testsetFull_GLM_Bal_NewData_V2)
+# auc(roc)
+
+
+
+#
+# #library(pROC)
+# testset_Final_GLM_Bal_V2=readRDS("testsetFull_GLM_Bal_NewData_V2.RDS")
+# p_class_Full_GLM_Bal_V2=readRDS("p_class_Full_GLM_Bal_NewData_V2.RDS")
+# roc_V2=roc(p_class_Full_GLM_Bal_V2,as.numeric(testset_Final_GLM_Bal_V2))
+# #auc(roc)
+# #auc(roc)
+# auc_Full_GLM_Bal_V2=round(auc(roc_V2),4)
+# #
+# # Put in a Value Box
+# #
+# 
+# 
+# valueBox(value=prettyNum(auc_Full_GLM_Bal_V2,big.mark=','),
+#          caption="AUC_Final_GLM_LM12_V2",
+#          icon='fal fa-mobile-alt')
+```
+
+### Final GLM LM12 AUC Gauge  Bal 3
+
+```{r }
+#
+# ### Put in a Gauge
+# #
+# gauge(value=auc_Full_GLM_Bal_V2,
+#       min=0,max=1,
+#       sectors=gaugeSectors(
+#         success=c(0.9,1),
+#         warning=c(0.7,0.89),
+#         danger=c(0,0.69)
+#       )
+#       )
+# #
+```
+
+
+
+#########################################################################################################
+
+
+### Final_GLM_NoLM12 AUC Value Box
+
+```{r Final GLM NoLM12 AUC Value Box }
+#    PRODUCE AN AUC
+#library(pROC)
+# p_class_Full_GLM_Bal_NewData_V3=p_class
+# testsetFull_GLM_Bal_NewData_V3=as.numeric(testset_ModelV3[["SDV_INDICATOR"]])
+# saveRDS(p_class_Full_GLM_Bal_NewData_V3,"p_class_Full_GLM_Bal_NewData_V3.RDS")
+# saveRDS(testsetFull_GLM_Bal_NewData_V3,"testsetFull_GLM_Bal_NewData_V3.RDS")
+# roc=roc(p_class_Full_GLM_Bal_NewData_V3,testsetFull_GLM_Bal_NewData_V3)
+# auc(roc)
+
+
+#
+# #library(pROC)
+# testset_Final_GLM_NoLM12_V3=readRDS("testsetFull_GLM_Bal_NewData_V3.RDS")
+# p_class_Final_GLM_NoLM12_V3=readRDS("p_class_Full_GLM_Bal_NewData_V3.RDS")
+# roc=roc(p_class_Final_GLM_NoLM12_V3,as.numeric(testset_Final_GLM_NoLM12_V3))
+# auc_Final_GLM_NoLM12=round(auc(roc),4)
+# # AUC_UnBal=auc(roc)
+# # print(paste0("AUC=",round(AUC_UnBal,2)))
+# 
+# valueBox(value=prettyNum(auc_Final_GLM_NoLM12,big.mark=','),
+#          caption="AUC_GLM_NoLM12",
+#          icon='fal fa-mobile-alt')
+# 
+# 
+# # library(ineq)
+# # Gini_Coeff=round(2*auc(roc) -1,2)
+# # 
+# # print(paste0("Gini_Coeff=",Gini_Coeff))
+# # #Gini_Coeff
+# # #0.926
+# # #0.926
+# #
+#
+
+
+
+
+```
+
+### Final_GLM_NoLM12 AUC Gauge
+
+```{r Final_GLM_NoLM12 AUC }
+### Put in a Gauge
+#
+# gauge(value=auc_Final_GLM_NoLM12,
+#       min=0,max=1,
+#       sectors=gaugeSectors(
+#         success=c(0.9,1),
+#         warning=c(0.7,0.89),
+#         danger=c(0,0.69)
+#       )
+#       )
+
+
+```
+
+
+
+
+ROC Final GLM LM12 Vs Final GLM No LM12 {data-width=350}
+-----------------------------------------------------------------------
+
+### ROC  Final GLM LM12
+
+```{r  Final GLM LM12}
+# p_Final_GLM_LM12_V2=readRDS("p_Full_GLM_Bal_NewData_V2.RDS")
+# # testset_Final_GLM_LM12=readRDS("testsetFullGLM.RDS")
+# colAUC(p_Final_GLM_LM12_V2,testset_Final_GLM_Bal_V2,plotROC = TRUE)
+
+```
+
+
+### ROC Final GLM No LM12
+
+```{r Final GLM No LM12  }
+# p_Final_GLM_No_LM12=readRDS("p_Full_GLM_Bal_NewData_V3.RDS")
+# # #
+# # testset_Final_GLM_No_LM1=readRDS("testset_QuantsPlus4.RDS")
+# #
+# colAUC(p_Final_GLM_No_LM12,testset_Final_GLM_NoLM12_V3,plotROC = TRUE)
+
+
+```
+
+1. Log Reg Models(Performance) {data-navmenu=LogRegModel}
+===================================================
+
+
+Tables {data-width=150}
+-----------------------------------------------------------------------
+
+### Table of performance Log Reg 2K
+
+```{r Table of performance Log Reg 2K}
+#
+# Read in the Coeff Table Saved in Exp_Analysis File
+
+CM_Log_Reg_2K_df_Top9=readRDS("./Data/CM_Log_Reg_2K_df_Top9.RDS")
+CM_Log_Reg_2K_df_Top9_no_meas=CM_Log_Reg_2K_df_Top9[,c(-1),drop=FALSE]
+CM_Log_Reg_2K_df_Top9_no_meas$Magnitude=round(CM_Log_Reg_2K_df_Top9_no_meas$Magnitude,2)
+datatable(CM_Log_Reg_2K_df_Top9_no_meas)
+
+```
+
+### Table of performance Log Reg 4k VarImp
+
+```{r Table Log Reg 4k VarImp}
+CM_Log_Reg_4K_10_Vars_df_Top9=readRDS("./Data/CCM_Log_Reg_4K_10_Vars_df_Top9.RDS")
+#
+
+CM_Log_Reg_4K_10_Vars_df_Top9_no_meas=CM_Log_Reg_4K_10_Vars_df_Top9[,c(-1),drop=FALSE]
+CM_Log_Reg_4K_10_Vars_df_Top9_no_meas$Magnitude=round(CM_Log_Reg_4K_10_Vars_df_Top9_no_meas$Magnitude,2)
+datatable(CM_Log_Reg_4K_10_Vars_df_Top9_no_meas)
+
+
+
+#datatable(CM_Log_Reg_4K_10_Vars_df_Top9_no_meas)
+
+
+
+
+
+```
+
+
+Performance Plots  {data-width=450}
+-----------------------------------------------------------------------
+
+
+### Performance Plot CM Log Reg 2K 
+
+```{r Performance Plot CM Log Reg 2K}
+
+CM_log_Reg_2K_plot=ggplot(CM_Log_Reg_2K_df_Top9,aes(x=fct_rev(Measure),y=Magnitude,fill=Magnitude))+geom_col()+coord_flip()+
+  geom_hline(yintercept=0.67,color="red") + labs(title="Performance:LogReg 2K Model", x="Measure", y="Magnitude")+theme(legend.position="none")
+ggplotly(CM_log_Reg_2K_plot)
+
+
+```
+
+### Performance Plot CN Log Reg 4k VarImp 10
+
+```{r Perf Plot Log Reg 4k VarImp 10  }
+CM_Log_Reg_4K_10_Vars_Plot=ggplot(CM_Log_Reg_4K_10_Vars_df_Top9,aes(x=fct_rev(Measure),y=Magnitude,fill=Magnitude))+geom_col()+coord_flip()+
+  geom_hline(yintercept=0.67,color="red") + labs(title="Performance Measures of Simple LogReg 4K Reduced Variables", x="Measure", y="Magnitude")+theme(legend.position="none")
+
+ggplotly(CM_Log_Reg_4K_10_Vars_Plot)
+#
+```
+
+
+
+
+
+
+ROC Curves {data-width=400}
+----------------------------------------------------------------------
+
+### ROC Log_Reg_2K
+
+```{r ROC LogReg2K}
+
+#                          Now we Produce and ROC Curve   and AUC Number 
+#
+#library(caTools)
+#
+p=readRDS("./Data/p_LogReg_2k_All.RDS")
+#
+testset_IND_F=readRDS("./Data/testset_IND_F_LogReg2K.RDS")
+#
+colAUC(p,testset_IND_F[["PACKAGE_IND"]],plotROC = TRUE)
+#
+######################################################################################
+
+
+
+```
+
+
+### ROC Log_Reg 4K VarImp
+
+```{r Deviance Plot }
+
+p=readRDS("./Data/p_Final_4K_Sample_Fac_Rand_VarImp.RDS")
+#
+testset_IND_F=readRDS("./Data/testset_Final_4K_VarImp.RDS")
+#
+colAUC(p,testset_IND_F[["PACKAGE_IND"]],plotROC = TRUE)
+
+
+```
+
+
+2. Best_Model_Min_Int (Performance) {data-navmenu=LogRegModel}
+===================================================
+
+
+
+Tables {data-width=150}
+-----------------------------------------------------------------------
+
+### Table of performance Log Reg Min Int
+
+```{r Table of performance Log Reg Min Int}
+#
+# Read in the Coeff Table Saved in Exp_Analysis File
+CM_Log_Reg_2K_glm_min_Int_df_Top9=readRDS("./Data/CM_Log_Reg_2K_glm_min_Int_df_Top9.RDS")
+CM_Log_Reg_2K_glm_min_Int_df_Top9_no_meas=CM_Log_Reg_2K_glm_min_Int_df_Top9[,c(-1),drop=FALSE]
+CM_Log_Reg_2K_glm_min_Int_df_Top9_no_meas$Magnitude=round(CM_Log_Reg_2K_glm_min_Int_df_Top9_no_meas$Magnitude,2)
+datatable(CM_Log_Reg_2K_glm_min_Int_df_Top9_no_meas)
+
+```
+
+
+
+Performance Plots  {data-width=450}
+-----------------------------------------------------------------------
+
+
+### Performance Plot CM Log Reg 2K Min Int 
+
+```{r Performance Plot CM Log Reg 2K Min Int}
+
+CM_log_Reg_2K_Min_Int_plot=ggplot(CM_Log_Reg_2K_glm_min_Int_df_Top9,aes(x=fct_rev(Measure),y=Magnitude,fill=Magnitude))+geom_col()+coord_flip()+
+  geom_hline(yintercept=0.67,color="red") + labs(title="Performance:LogReg 2K Model (Min/Int) ", x="Measure", y="Magnitude")+theme(legend.position="none")
+ggplotly(CM_log_Reg_2K_Min_Int_plot)
+
+
+```
+
+
+ROC Curves Min Int {data-width=400}
+----------------------------------------------------------------------
+
+### ROC Log_Reg_2K Min Int
+
+```{r ROC LogReg2K Min Int }
+
+#                          Now we Produce and ROC Curve   and AUC Number 
+#
+#library(caTools)
+#
+#saveRDS(p_glm_min_Int,"./Data/p_glm_min_Int.RDS")
+p_glm_min_Int=readRDS("./Data/p_glm_min_Int.RDS")
+#
+testset_IND_F=readRDS("./Data/testset_IND_F_LogReg2K.RDS")
+#
+colAUC(p_glm_min_Int,testset_IND_F[["PACKAGE_IND"]],plotROC = TRUE)
+#
+######################################################################################
+
+
+
+```
+
+
+
+3. Best_Model_Min_Int (Parameters) {data-navmenu=LogRegModel}
+===================================================
+
+Tables (Coeff/Dev/Conf/Int) {data-width=300}
+-----------------------------------------------------------------------
+
+### Table of Coefficients
+
+```{r Table Of Coefficients }
+#
+# Read in the Coeff Table Saved in Exp_Analysis File
+model_Coeffs_glm_min_Int_tidy=readRDS("./Data/model_Coeffs_glm_min_Int_tidy.RDS")
+
+Table_Coeffs=model_Coeffs_glm_min_Int_tidy%>%select(term,estimate,p.value)
+
+Table_Coeffs=Table_Coeffs%>%arrange(desc(estimate))
+
+Table_Coeffs$estimate=round(Table_Coeffs$estimate,3)
+
+Table_Coeffs$p.value=round(Table_Coeffs$p.value,3)
+
+
+
+datatable(Table_Coeffs)
+#
+```
+
+
+
+### Table of Dev and p Value
+
+```{r Table of performance Dev p value }
+#
+model_Dev_glm_min_Int_tidy=readRDS("model_Dev_glm_min_Int_tidy.RDS")
+
+model_Dev_Params=model_Dev_glm_min_Int_tidy%>%select(term,Deviance,p.value)
+
+model_Dev_Params$Deviance=round(model_Dev_Params$Deviance,0)
+
+model_Dev_Params$p.value=round(model_Dev_Params$p.value,4)
+
+model_Dev_Params=model_Dev_Params%>%arrange(desc(Deviance))
+
+datatable(model_Dev_Params)
+
+```
+
+
+Plots (Coeffs and ODDS) {data-width=350}
+-----------------------------------------------------------------------
+
+### Plot of Coefficients
+
+```{r Plot of coefficients }
+#
+# NOW WE TRY PLOT LY GRAPHS  FOR THE COEFFICIENTS 
+#
+# Graph Coefficients
+#
+coefs_glm_min_Int=fct_rev(fct_reorder(model_Coeffs_glm_min_Int_tidy$term,model_Coeffs_glm_min_Int_tidy$estimate))
+
+pl_coeffs_Model_glm_min_Int=ggplot(model_Coeffs_glm_min_Int_tidy,aes(x=coefs_glm_min_Int,y=estimate,fill=term))+geom_col()+coord_flip()+
+  theme(legend.position = "none") +labs(title="coefficient size comparisons",x="Coefficient_Term",y="estimate magnitude")
+
+ggplotly(pl_coeffs_Model_glm_min_Int)
+
+
+```
+
+
+### Plot of Odds Ratio
+
+```{r Plot of Odds Ratio}
+
+Coeff_OR_glm_min_Int_tidy=readRDS("./Data/Coeff_OR_glm_min_Int_tidy.RDS")
+#
+#                  Coefficient For Odds Ratios
+# Remove the intercept From The graph
+colnames(Coeff_OR_glm_min_Int_tidy)[1]="term"
+Coeff_OR_glm_min_Int_tidy_no_Int=Coeff_OR_glm_min_Int_tidy%>%filter(term!="(Intercept)")
+
+#
+#colnames(Coeff_OR_glm_min_Int_tidy_no_Int)=c("term","OR","X2.5%","X97.5%")
+terms=(fct_reorder(Coeff_OR_glm_min_Int_tidy_no_Int$term,Coeff_OR_glm_min_Int_tidy_no_Int$OR))
+
+# Remove Filter Term 
+#
+
+
+pl_OR_Model_min_Int=ggplot(Coeff_OR_glm_min_Int_tidy_no_Int,aes(x=terms,y=OR,fill=term))+geom_col()+coord_flip()+
+  theme(legend.position = "none") +labs(title="OR comparisons",x="Coefficient_Term",y="OR magnitude")
+
+ggplotly(pl_OR_Model_min_Int)
+
+```
+
+
+
+
+Plots (P Values / Dev) {data-width=350}
+-----------------------------------------------------------------------
+
+
+
+### Plot of P Value
+
+```{r Plot of P Value}
+#Table_Coeffs
+
+terms=fct_reorder(Table_Coeffs$term,Table_Coeffs$p.value)
+#
+pl_P_Values=ggplot(Table_Coeffs,aes(x=terms,y=p.value,fill=term))+geom_col()+coord_flip()+
+  theme(legend.position = "none") +labs(title="Coeffs and P values",x="Coefficient_Term",y="p values")
+
+ggplotly(pl_P_Values)
+
+```
+
+
+
+
+### Plot of Deviance
+
+```{r Plot of Deviance}
+#
+#colnames(Coeff_OR_tidy_no_Int)=c("term","OR","X2.5%","X97.5%")
+terms=(fct_reorder(model_Dev_glm_min_Int_tidy$term,model_Dev_glm_min_Int_tidy$Deviance))
+
+# Remove Filter Term 
+#
+
+
+pl_Dev_model_glm_min_Int=ggplot(model_Dev_glm_min_Int_tidy,aes(x=terms,y=Deviance,fill=term))+geom_col()+coord_flip()+
+  theme(legend.position = "none") +labs(title="Deviance comparisons",x="Coefficient_Term",y="Deviance magnitude")
+
+ggplotly(pl_Dev_model_glm_min_Int)
+
+```
+
+
+
+
+
+G1: Age/CR Lim {data-navmenu=Scored_Vars}
+===================================================
+
+Propensity Vs Age and Credit Limit {data-width=350}
+----------------------------------------------------------
+
+### Propensity Vs Age 
+
+```{r Propensity Vs Age }
+###########################################################
+# READ IN THE FILE FOR ALL GRAPHICS
+Final_Sample_100k_w_Score=readRDS("./Data/Final_Sample_100k_w_Score")
+#####################################################################################################
+#                               PROB AND BOX BY AGE 
+# New Age Density
+Dist_By_Age=ggplotly(ggplot(Final_Sample_100k_w_Score,aes(x=P_Score,color=as.factor(New_Age)))+geom_density()+labs(title="Prob By New Age"))
+
+# New Age Boxplot
+BoxPlot_By_Age=ggplotly(ggplot(Final_Sample_100k_w_Score,aes(x=New_Age,y=P_Score,fill=as.factor(New_Age)))+geom_boxplot()+labs(title="Prob By New Age"))
+subplot(Dist_By_Age,BoxPlot_By_Age,nrows = 2)
+
+##################################################################################################################
+
+```
+
+### Propensity Vs CR Limit
+
+```{r Propensity Vs CR Limit}
+#####################################################################################################
+#                               PROB AND BOX BY CR LIM  
+# New Age Density
+Dist_By_CR_Lim=ggplotly(ggplot(Final_Sample_100k_w_Score,aes(x=P_Score,color=as.factor(New_CR_Lim)))+geom_density()+labs(title="Prob By New CR Lim"))
+
+# New Age Boxplot
+BoxPlot_By_CR_Lim=ggplotly(ggplot(Final_Sample_100k_w_Score,aes(x=New_CR_Lim,y=P_Score,fill=as.factor(New_CR_Lim)))+geom_boxplot()+labs(title="Prob By New_CR_Lim"))
+subplot(Dist_By_CR_Lim,BoxPlot_By_CR_Lim,nrows = 2)
+
+##################################################################################################################
+
+```
+
+
+Interaction 1 {data-width=325}
+----------------------------------------------------------
+
+### Age Int. With Credit Limit 
+
+```{r Age Int. With Credit Limit }
+
+##################################################################################################################
+#                          INTERACTION OF AGE VS CR LIM ( INTERACTION)
+#
+BoxPlot_By_CR_Lim_By_AGE=(ggplot(Final_Sample_100k_w_Score,aes(x=New_CR_Lim,y=P_Score,color=as.factor(New_Age)))+geom_boxplot()+labs(title="Prob By New_CR_Lim By Age "))
+#subplot(Dist_By_CR_Lim,BoxPlot_By_CR_Lim,nrows = 2)
+
+#################################################################################################3####################
+BoxPlot_By_CR_Lim_By_AGE
+```
+
+### Credit Limit Int. with Sug Do Day
+
+```{r Credit Limit Int. with Sug Do Day }
+
+#######################################################################################################################
+#                                                   CR LIM
+#
+Dist_New_SugDoDay_BY_CR_LIM=(ggplot(Final_Sample_100k_w_Score,aes(x=New_SugDoDay,  y=P_Score,color=as.factor(New_CR_Lim)))+geom_boxplot()+labs(title="Prob New_SugDoDay By New_CR_Lim "))
+#
+Dist_New_SugDoDay_BY_CR_LIM
+#
+############################################################################################################
+
+
+```
+
+
+Interaction 2 {data-width=325}
+----------------------------------------------------------
+
+### Age Int. With Float
+
+```{r Age Interaction With Float 5  }
+
+##################################################################################################################
+#                          INTERACTION OF AGE VS MAX FLOAT  ( INTERACTION)
+#
+BoxPlot_By_Max_Float_By_AGE=(ggplot(Final_Sample_100k_w_Score,aes(x=New_Max_Float5,y=P_Score,color=as.factor(New_Age)))+geom_boxplot()+labs(title="Prob By MaxFloat 5  By Age "))
+BoxPlot_By_Max_Float_By_AGE
+#subplot(Dist_By_CR_Lim,BoxPlot_By_CR_Lim,nrows = 2)
+#################################################################################################3####################
+```
+
+### Credit Limit Int. with Float 5
+
+```{r Credit Limit Int. with Float 5  }
+
+###################################################################################################################
+##################################################################################################################
+#                          INTERACTION OF MAX FLOAT  VS CR LIM ( INTERACTION)
+#
+BoxPlot_CR_Lim_By_Max_Float_5=(ggplot(Final_Sample_100k_w_Score,aes(x=New_CR_Lim,y=P_Score,color=as.factor(New_Max_Float5)))+geom_boxplot()+labs(title="Prob By New_CR_Lim By Max Float 5  "))
+
+BoxPlot_CR_Lim_By_Max_Float_5
+#subplot(Dist_By_CR_Lim,BoxPlot_By_CR_Lim,nrows = 2)
+#################################################################################################3####################
+
+
+
+```
+
+G1_Scored: Age/CR Lim {data-navmenu=Scored_Vars}
+===================================================
+
+Propensity Vs Age and Credit Limit {data-width=350}
+----------------------------------------------------------
+
+### Propensity Vs Age 
+
+```{r Propensity Vs Age Score }
+###########################################################
+# READ IN THE FILE FOR ALL GRAPHICS
+#saveRDS(FINAL_SCORE_FRAME_Fac_w_Score,"./Data/FINAL_SCORE_FRAME_Fac_w_Score.RDS")
+FINAL_SCORE_FRAME_Fac_w_Score=readRDS("./Data/FINAL_SCORE_FRAME_Fac_w_Score.RDS")
+#####################################################################################################
+#                               PROB AND BOX BY AGE 
+# New Age Density
+Dist_By_Age=ggplotly(ggplot(FINAL_SCORE_FRAME_Fac_w_Score,aes(x=P_Score,color=as.factor(New_Age)))+geom_density()+labs(title="Prob By New Age"))
+
+# New Age Boxplot
+BoxPlot_By_Age=ggplotly(ggplot(FINAL_SCORE_FRAME_Fac_w_Score,aes(x=New_Age,y=P_Score,fill=as.factor(New_Age)))+geom_boxplot()+labs(title="Prob By New Age"))
+subplot(Dist_By_Age,BoxPlot_By_Age,nrows = 2)
+
+##################################################################################################################
+
+```
+
+### Propensity Vs CR Limit
+
+```{r Propensity Vs CR Limit Score}
+#####################################################################################################
+#                               PROB AND BOX BY CR LIM  
+# New Age Density
+Dist_By_CR_Lim=ggplotly(ggplot(FINAL_SCORE_FRAME_Fac_w_Score,aes(x=P_Score,color=as.factor(New_CR_Lim)))+geom_density()+labs(title="Prob By New CR Lim"))
+
+# New Age Boxplot
+BoxPlot_By_CR_Lim=ggplotly(ggplot(FINAL_SCORE_FRAME_Fac_w_Score,aes(x=New_CR_Lim,y=P_Score,fill=as.factor(New_CR_Lim)))+geom_boxplot()+labs(title="Prob By New_CR_Lim"))
+subplot(Dist_By_CR_Lim,BoxPlot_By_CR_Lim,nrows = 2)
+
+##################################################################################################################
+
+```
+
+
+Interaction 1 {data-width=325}
+----------------------------------------------------------
+
+### Age Int. With Credit Limit 
+
+```{r Age Int. With Credit Limit Score }
+
+##################################################################################################################
+#                          INTERACTION OF AGE VS CR LIM ( INTERACTION)
+#
+BoxPlot_By_CR_Lim_By_AGE=(ggplot(FINAL_SCORE_FRAME_Fac_w_Score,aes(x=New_CR_Lim,y=P_Score,color=as.factor(New_Age)))+geom_boxplot()+labs(title="Prob By New_CR_Lim By Age "))
+#subplot(Dist_By_CR_Lim,BoxPlot_By_CR_Lim,nrows = 2)
+
+#################################################################################################3####################
+BoxPlot_By_CR_Lim_By_AGE
+```
+
+### Credit Limit Int. with Sug Do Day
+
+```{r Credit Limit Int. with Sug Do Day Score }
+
+#######################################################################################################################
+#                                                   CR LIM
+#
+Dist_New_SugDoDay_BY_CR_LIM=(ggplot(FINAL_SCORE_FRAME_Fac_w_Score,aes(x=New_SugDoDay,  y=P_Score,color=as.factor(New_CR_Lim)))+geom_boxplot()+labs(title="Prob New_SugDoDay By New_CR_Lim "))
+#
+Dist_New_SugDoDay_BY_CR_LIM
+#
+############################################################################################################
+
+
+```
+
+
+Interaction 2 {data-width=325}
+----------------------------------------------------------
+
+### Age Int. With Float
+
+```{r Age Interaction With Float 5 Score }
+
+##################################################################################################################
+#                          INTERACTION OF AGE VS MAX FLOAT  ( INTERACTION)
+#
+BoxPlot_By_Max_Float_By_AGE=(ggplot(FINAL_SCORE_FRAME_Fac_w_Score,aes(x=New_Max_Float5,y=P_Score,color=as.factor(New_Age)))+geom_boxplot()+labs(title="Prob By MaxFloat 5  By Age "))
+BoxPlot_By_Max_Float_By_AGE
+#subplot(Dist_By_CR_Lim,BoxPlot_By_CR_Lim,nrows = 2)
+#################################################################################################3####################
+```
+
+### Credit Limit Int. with Float 5
+
+```{r Credit Limit Int. with Float 5 Score }
+
+###################################################################################################################
+##################################################################################################################
+#                          INTERACTION OF MAX FLOAT  VS CR LIM ( INTERACTION)
+#
+BoxPlot_CR_Lim_By_Max_Float_5=(ggplot(FINAL_SCORE_FRAME_Fac_w_Score,aes(x=New_CR_Lim,y=P_Score,color=as.factor(New_Max_Float5)))+geom_boxplot()+labs(title="Prob By New_CR_Lim By Max Float 5  "))
+
+BoxPlot_CR_Lim_By_Max_Float_5
+#subplot(Dist_By_CR_Lim,BoxPlot_By_CR_Lim,nrows = 2)
+#################################################################################################3####################
+
+
+
+```
+
+G2: SugDoDay/Occupation {data-navmenu=Scored_Vars}
+===================================================
+
+Propensity Vs SugDoDay and Occupation {data-width=350}
+----------------------------------------------------------
+
+### Propensity Vs SugDoDay 
+
+```{r Propensity Vs SugDoDay  }
+# New_SugDoDay  Density
+Dist_By_New_SugDoDay=ggplotly(ggplot(Final_Sample_100k_w_Score,aes(x=P_Score,color=as.factor(New_SugDoDay)))+geom_density()+labs(title="Prob By New_SugDoDay"))
+#
+# 
+#New_SugDoDay  Boxplots
+BoxPlot_By_New_SugDoDay=ggplotly(ggplot(Final_Sample_100k_w_Score,aes(x=New_SugDoDay,y=P_Score,color=as.factor(New_SugDoDay)))+geom_boxplot()+labs(title="Prob By New_SugDoDay"))
+#
+subplot(Dist_By_New_SugDoDay,BoxPlot_By_New_SugDoDay,nrows = 2)
+
+
+```
+
+### Propensity Vs Occupation
+
+```{r Propensity Vs Occupation}
+#################################################################################################3####################
+#                                             New_Occup
+#################################################################################################3####################
+#                                       PROB AND BOX BY New_Occup
+#
+# New_SugDoDay  Density
+Dist_By_New_Occup=ggplotly(ggplot(Final_Sample_100k_w_Score,aes(x=P_Score,color=as.factor(New_Occup)))+geom_density()+labs(title="Prob By New_Occup"))
+#
+# 
+#New_SugDoDay  Boxplots
+BoxPlot_By_New_Occup=ggplotly(ggplot(Final_Sample_100k_w_Score,aes(x=New_Occup,y=P_Score,color=as.factor(New_Occup)))+geom_boxplot()+labs(title="Prob By New_Occup"))
+#
+subplot(Dist_By_New_Occup,BoxPlot_By_New_Occup,nrows = 2)
+####################################################################################################
+
+```
+
+
+Interaction 1 {data-width=325}
+----------------------------------------------------------
+
+### SugDoDay With Age
+
+```{r SugDoDay With Age }
+
+###################################################################################################################
+#                                   NOW WE DO THE INTERACTIONS WITH SUG DO DAY 
+#
+#                                                     AGE
+#
+#  Say with Age 
+#
+# New_SugDoDay  Density
+Dist_New_SugDoDay_BY_Age=(ggplot(Final_Sample_100k_w_Score,aes(x=New_SugDoDay,  y=P_Score,color=as.factor(New_Age)))+geom_boxplot()+labs(title="Prob New_SugDoDay By Age "))
+#
+Dist_New_SugDoDay_BY_Age
+#
+#
+#
+#######################################################################################################################
+```
+
+### Occupation with Sug Do Day
+
+```{r Occupation with Sug Do Day }
+
+####################################################################################################
+#                                        Interactions of Occup with Sug Do Day 
+#
+#                                       INTERACTION with SugDoDay
+#
+Dist_New_Occup_BY_New_SugDoDay=(ggplot(Final_Sample_100k_w_Score,aes(x=New_Occup,  y=P_Score,color=as.factor(New_SugDoDay)))+geom_boxplot()+labs(title="Prob New_Occup By SugDoDay "))
+Dist_New_Occup_BY_New_SugDoDay
+
+#
+###################################################################################################################
+
+
+```
+
+
+Interaction 2 {data-width=325}
+----------------------------------------------------------
+
+### Sug Do Day  With Float
+
+```{r Sug Do Day  With Float  }
+
+############################################################################################################
+#                                                   MAX_FLOAT5
+#
+# THEN WITH MAX FLOAT 5 
+# 
+Dist_New_SugDoDay_BY_New_Max_Float5=(ggplot(Final_Sample_100k_w_Score,aes(x=New_SugDoDay,  y=P_Score,color=as.factor(New_Max_Float5)))+geom_boxplot()+labs(title="Prob New_SugDoDay By New_Max_Float5 "))
+#
+Dist_New_SugDoDay_BY_New_Max_Float5
+#
+#######################################################################################################
+```
+
+### Occupation Vs Float
+
+```{r Occupation Vs with Float 5  }
+
+############################################################################################################
+#                                                   MAX_FLOAT5
+#
+# THEN WITH MAX FLOAT 5 
+# 
+Dist_New_Occup_BY_New_Max_Float5=(ggplot(Final_Sample_100k_w_Score,aes(x=New_Occup,  y=P_Score,color=as.factor(New_Max_Float5)))+geom_boxplot()+labs(title="Prob New_Occup, By New_Max_Float5 "))
+#
+Dist_New_Occup_BY_New_Max_Float5
+
+
+
+
+
+```
+
+
+G2_Score : SugDoDay/Occupation {data-navmenu=Scored_Vars}
+===================================================
+
+Propensity Vs SugDoDay and Occupation {data-width=350}
+----------------------------------------------------------
+
+### Propensity Vs SugDoDay 
+
+```{r Propensity Vs SugDoDay Score }
+# New_SugDoDay  Density
+Dist_By_New_SugDoDay=ggplotly(ggplot(FINAL_SCORE_FRAME_Fac_w_Score,aes(x=P_Score,color=as.factor(New_SugDoDay)))+geom_density()+labs(title="Prob By New_SugDoDay"))
+#
+# 
+#New_SugDoDay  Boxplots
+BoxPlot_By_New_SugDoDay=ggplotly(ggplot(FINAL_SCORE_FRAME_Fac_w_Score,aes(x=New_SugDoDay,y=P_Score,color=as.factor(New_SugDoDay)))+geom_boxplot()+labs(title="Prob By New_SugDoDay"))
+#
+subplot(Dist_By_New_SugDoDay,BoxPlot_By_New_SugDoDay,nrows = 2)
+
+
+```
+
+### Propensity Vs Occupation
+
+```{r Propensity Vs Occupation Score}
+#################################################################################################3####################
+#                                             New_Occup
+#################################################################################################3####################
+#                                       PROB AND BOX BY New_Occup
+#
+# New_SugDoDay  Density
+Dist_By_New_Occup=ggplotly(ggplot(FINAL_SCORE_FRAME_Fac_w_Score,aes(x=P_Score,color=as.factor(New_Occup)))+geom_density()+labs(title="Prob By New_Occup"))
+#
+# 
+#New_SugDoDay  Boxplots
+BoxPlot_By_New_Occup=ggplotly(ggplot(FINAL_SCORE_FRAME_Fac_w_Score,aes(x=New_Occup,y=P_Score,color=as.factor(New_Occup)))+geom_boxplot()+labs(title="Prob By New_Occup"))
+#
+subplot(Dist_By_New_Occup,BoxPlot_By_New_Occup,nrows = 2)
+####################################################################################################
+
+```
+
+
+Interaction 1 {data-width=325}
+----------------------------------------------------------
+
+### SugDoDay With Age
+
+```{r SugDoDay With Age Score}
+
+###################################################################################################################
+#                                   NOW WE DO THE INTERACTIONS WITH SUG DO DAY 
+#
+#                                                     AGE
+#
+#  Say with Age 
+#
+# New_SugDoDay  Density
+Dist_New_SugDoDay_BY_Age=(ggplot(FINAL_SCORE_FRAME_Fac_w_Score,aes(x=New_SugDoDay,  y=P_Score,color=as.factor(New_Age)))+geom_boxplot()+labs(title="Prob New_SugDoDay By Age "))
+#
+Dist_New_SugDoDay_BY_Age
+#
+#
+#
+#######################################################################################################################
+```
+
+### Occupation with Sug Do Day
+
+```{r Occupation with Sug Do Day Score }
+
+####################################################################################################
+#                                        Interactions of Occup with Sug Do Day 
+#
+#                                       INTERACTION with SugDoDay
+#
+Dist_New_Occup_BY_New_SugDoDay=(ggplot(FINAL_SCORE_FRAME_Fac_w_Score,aes(x=New_Occup,  y=P_Score,color=as.factor(New_SugDoDay)))+geom_boxplot()+labs(title="Prob New_Occup By SugDoDay "))
+Dist_New_Occup_BY_New_SugDoDay
+
+#
+###################################################################################################################
+
+
+```
+
+
+Interaction 2 {data-width=325}
+----------------------------------------------------------
+
+### Sug Do Day  With Float
+
+```{r Sug Do Day  With Float Score }
+
+############################################################################################################
+#                                                   MAX_FLOAT5
+#
+# THEN WITH MAX FLOAT 5 
+# 
+Dist_New_SugDoDay_BY_New_Max_Float5=(ggplot(FINAL_SCORE_FRAME_Fac_w_Score,aes(x=New_SugDoDay,  y=P_Score,color=as.factor(New_Max_Float5)))+geom_boxplot()+labs(title="Prob New_SugDoDay By New_Max_Float5 "))
+#
+Dist_New_SugDoDay_BY_New_Max_Float5
+#
+#######################################################################################################
+```
+
+### Occupation Vs Float
+
+```{r Occupation Vs with Float 5 Score }
+
+############################################################################################################
+#                                                   MAX_FLOAT5
+#
+# THEN WITH MAX FLOAT 5 
+# 
+Dist_New_Occup_BY_New_Max_Float5=(ggplot(FINAL_SCORE_FRAME_Fac_w_Score,aes(x=New_Occup,  y=P_Score,color=as.factor(New_Max_Float5)))+geom_boxplot()+labs(title="Prob New_Occup, By New_Max_Float5 "))
+#
+Dist_New_Occup_BY_New_Max_Float5
+
+
+
+
+
+```
+
+
+G3: INS_CLP/INS_ST {data-navmenu=Scored_Vars}
+===================================================
+
+Propensity Vs INS_CLP and INS_ST {data-width=350}
+----------------------------------------------------------
+
+### Propensity Vs INS_CLP 
+
+```{r Propensity Vs INS_CLP  }
+#################################################################################################3####################
+#                                             INS_CLP_IND
+#################################################################################################3####################
+#                                       PROB AND BOX BY INS_CLP_IND
+#
+# New_SugDoDay  Density
+Dist_By_INS_CLP_IND=ggplotly(ggplot(Final_Sample_100k_w_Score,aes(x=P_Score,color=as.factor(INS_CLP_IND)))+geom_density()+labs(title="Prob By INS_CLP_IND"))
+#
+# 
+#New_SugDoDay  Boxplots
+BoxPlot_By_INS_CLP_IND=ggplotly(ggplot(Final_Sample_100k_w_Score,aes(x=INS_CLP_IND,y=P_Score,color=as.factor(INS_CLP_IND)))+geom_boxplot()+labs(title="Prob By INS_CLP_IND"))
+#
+subplot(Dist_By_INS_CLP_IND,BoxPlot_By_INS_CLP_IND,nrows = 2)
+####################################################################################################
+
+
+```
+
+### Propensity Vs INS_ST
+
+```{r Propensity Vs INS_ST}
+
+#################################################################################################3####################
+#                                             INS_ST_IND
+#################################################################################################3####################
+#                                       PROB AND BOX BY INS_ST_IND
+#
+# New_SugDoDay  Density
+Dist_By_INS_ST_IND=ggplotly(ggplot(Final_Sample_100k_w_Score,aes(x=P_Score,color=as.factor(INS_ST_IND)))+geom_density()+labs(title="Prob By INS_ST_IND"))
+#
+# 
+#New_SugDoDay  Boxplots
+BoxPlot_By_INS_ST_IND=ggplotly(ggplot(Final_Sample_100k_w_Score,aes(x=INS_ST_IND,y=P_Score,color=as.factor(INS_ST_IND)))+geom_boxplot()+labs(title="Prob By INS_ST_IND"))
+#
+subplot(Dist_By_INS_ST_IND,BoxPlot_By_INS_ST_IND,nrows = 2)
+####################################################################################################
+
+```
+
+
+Interaction 1 {data-width=325}
+----------------------------------------------------------
+
+### INS_CLP By Occupation
+
+```{r INS_CLP By Occupation }
+
+####################################################################################################
+#                                        Interactions of INS_CLP_IND with New_Occup 
+#
+#                                       INTERACTION with New_Occup
+#
+Dist_INS_CLP_IND_BY_New_Occup=(ggplot(Final_Sample_100k_w_Score,aes(x=INS_CLP_IND,  y=P_Score,color=as.factor(New_Occup)))+geom_boxplot()+labs(title="Prob INS_CLP By New_Occup "))
+Dist_INS_CLP_IND_BY_New_Occup
+
+####################################################################################################
+```
+
+### INS_ST By INS_CLP
+
+```{r INS_ST By INS_CLP }
+
+####################################################################################################
+####################################################################################################
+#                                        Interactions of INS_ST_IND with INS_CLP_IND
+#
+#                                       INTERACTION with INS_CLP_IND
+#
+Dist_INS_ST_IND_BY_INS_CLP_IND=(ggplot(Final_Sample_100k_w_Score,aes(x=INS_ST_IND,  y=P_Score,color=as.factor(INS_CLP_IND)))+geom_boxplot()+labs(title="Prob INS_ST_IND By INS_CLP_IND "))
+Dist_INS_ST_IND_BY_INS_CLP_IND
+
+####################################################################################################
+
+
+```
+
+
+Interaction 2 {data-width=325}
+----------------------------------------------------------
+
+### INS_CLP  With Age
+
+```{r INS_CLP  With Age  }
+
+###################################################################################################################
+#                                   NOW WE DO THE INTERACTIONS INS_CLP_IND with Age 
+#                                                     AGE
+#
+#  Say with Age 
+#
+# New_SugDoDay  Density
+Dist_INS_CLP_IND_BY_Age=(ggplot(Final_Sample_100k_w_Score,aes(x=INS_CLP_IND,  y=P_Score,color=as.factor(New_Age)))+geom_boxplot()+labs(title="Prob_INS_CLP_IND By Age "))
+#
+Dist_INS_CLP_IND_BY_Age
+#
+#
+#######################################################################################################################
+#######################################################################################################################
+```
+
+### INS_ST with SugDoDay
+
+```{r INS_ST with SugDoDay  }
+
+####################################################################################################
+#                                        Interactions of INS_ST_IND with Sug Do Day 
+#
+#                                         INTERACTION with SugDoDay
+#
+Dist_INS_ST_IND_BY_New_SugDoDay=(ggplot(Final_Sample_100k_w_Score,aes(x=INS_ST_IND,  y=P_Score,color=as.factor(New_SugDoDay)))+geom_boxplot()+labs(title="Prob INS_ST_IND By SugDoDay "))
+Dist_INS_ST_IND_BY_New_SugDoDay
+##
+#
+###################################################################################################################
+
+```
+
+
+
+
+
+G3_Scored: INS_CLP/INS_ST {data-navmenu=Scored_Vars}
+===================================================
+
+Propensity Vs INS_CLP and INS_ST {data-width=350}
+----------------------------------------------------------
+
+### Propensity Vs INS_CLP 
+
+```{r Propensity Vs INS_CLP Score }
+#################################################################################################3####################
+#                                             INS_CLP_IND
+#################################################################################################3####################
+#                                       PROB AND BOX BY INS_CLP_IND
+#
+# New_SugDoDay  Density
+Dist_By_INS_CLP_IND=ggplotly(ggplot(FINAL_SCORE_FRAME_Fac_w_Score,aes(x=P_Score,color=as.factor(INS_CLP_IND)))+geom_density()+labs(title="Prob By INS_CLP_IND"))
+#
+# 
+#New_SugDoDay  Boxplots
+BoxPlot_By_INS_CLP_IND=ggplotly(ggplot(FINAL_SCORE_FRAME_Fac_w_Score,aes(x=INS_CLP_IND,y=P_Score,color=as.factor(INS_CLP_IND)))+geom_boxplot()+labs(title="Prob By INS_CLP_IND"))
+#
+subplot(Dist_By_INS_CLP_IND,BoxPlot_By_INS_CLP_IND,nrows = 2)
+####################################################################################################
+
+
+```
+
+### Propensity Vs INS_ST
+
+```{r Propensity Vs INS_ST Score}
+
+#################################################################################################3####################
+#                                             INS_ST_IND
+#################################################################################################3####################
+#                                       PROB AND BOX BY INS_ST_IND
+#
+# New_SugDoDay  Density
+Dist_By_INS_ST_IND=ggplotly(ggplot(FINAL_SCORE_FRAME_Fac_w_Score,aes(x=P_Score,color=as.factor(INS_ST_IND)))+geom_density()+labs(title="Prob By INS_ST_IND"))
+#
+# 
+#New_SugDoDay  Boxplots
+BoxPlot_By_INS_ST_IND=ggplotly(ggplot(FINAL_SCORE_FRAME_Fac_w_Score,aes(x=INS_ST_IND,y=P_Score,color=as.factor(INS_ST_IND)))+geom_boxplot()+labs(title="Prob By INS_ST_IND"))
+#
+subplot(Dist_By_INS_ST_IND,BoxPlot_By_INS_ST_IND,nrows = 2)
+####################################################################################################
+
+```
+
+
+Interaction 1 {data-width=325}
+----------------------------------------------------------
+
+### INS_CLP By Occupation
+
+```{r INS_CLP By Occupation Score}
+
+####################################################################################################
+#                                        Interactions of INS_CLP_IND with New_Occup 
+#
+#                                       INTERACTION with New_Occup
+#
+Dist_INS_CLP_IND_BY_New_Occup=(ggplot(FINAL_SCORE_FRAME_Fac_w_Score,aes(x=INS_CLP_IND,  y=P_Score,color=as.factor(New_Occup)))+geom_boxplot()+labs(title="Prob INS_CLP By New_Occup "))
+Dist_INS_CLP_IND_BY_New_Occup
+
+####################################################################################################
+```
+
+### INS_ST By INS_CLP
+
+```{r INS_ST By INS_CLP Score}
+
+####################################################################################################
+####################################################################################################
+#                                        Interactions of INS_ST_IND with INS_CLP_IND
+#
+#                                       INTERACTION with INS_CLP_IND
+#
+Dist_INS_ST_IND_BY_INS_CLP_IND=(ggplot(FINAL_SCORE_FRAME_Fac_w_Score,aes(x=INS_ST_IND,  y=P_Score,color=as.factor(INS_CLP_IND)))+geom_boxplot()+labs(title="Prob INS_ST_IND By INS_CLP_IND "))
+Dist_INS_ST_IND_BY_INS_CLP_IND
+
+####################################################################################################
+
+
+```
+
+
+Interaction 2 {data-width=325}
+----------------------------------------------------------
+
+### INS_CLP  With Age
+
+```{r INS_CLP  With Age Score }
+
+###################################################################################################################
+#                                   NOW WE DO THE INTERACTIONS INS_CLP_IND with Age 
+#                                                     AGE
+#
+#  Say with Age 
+#
+# New_SugDoDay  Density
+Dist_INS_CLP_IND_BY_Age=(ggplot(FINAL_SCORE_FRAME_Fac_w_Score,aes(x=INS_CLP_IND,  y=P_Score,color=as.factor(New_Age)))+geom_boxplot()+labs(title="Prob_INS_CLP_IND By Age "))
+#
+Dist_INS_CLP_IND_BY_Age
+#
+#
+#######################################################################################################################
+#######################################################################################################################
+```
+
+### INS_ST with SugDoDay
+
+```{r INS_ST with SugDoDay Score }
+
+####################################################################################################
+#                                        Interactions of INS_ST_IND with Sug Do Day 
+#
+#                                         INTERACTION with SugDoDay
+#
+Dist_INS_ST_IND_BY_New_SugDoDay=(ggplot(FINAL_SCORE_FRAME_Fac_w_Score,aes(x=INS_ST_IND,  y=P_Score,color=as.factor(New_SugDoDay)))+geom_boxplot()+labs(title="Prob INS_ST_IND By SugDoDay "))
+Dist_INS_ST_IND_BY_New_SugDoDay
+##
+#
+###################################################################################################################
+
+```
+
+
+Group4:Age/Acc Age/Cr Lim/ Float{data-navmenu=Scored_Vars}
+===================================================
+
+Age  and Acc Age
+----------------------------------------------------------
+
+### Age Prob Dist
+
+```{r Age Prob Dist}
+# # Data Read in At the Top 
+# ##################################################################################################################################
+# #                                                   DENSITY FUNCTIONs AND BOX PLOTS ON DIMENSIONS 
+# ###################################################################################################################################
+# #
+# #                                                      AGE QUANT DENSITY 
+# #
+# #  We First Dio Some Exploratory Data Analysis 
+# Age_Dens=ggplot(Final_Prediction_List_Desc_prob_V3[,],aes(x=Prob,color=CUST_AGE_Quant)) +geom_density()+
+#   scale_color_discrete(name="Age(qu)") +labs(title="Scored Probability Density (Age Quant) ", x="Probability")
+# #
+# #ggplotly(Total_Dens)                                           
+# pl_Age_Dens=ggplotly(Age_Dens)
+# #                                                           AGE QUANT BOX PLOT
+# #
+# Age_Box=ggplot(Final_Prediction_List_Desc_prob_V3[,],aes(x=CUST_AGE_Quant,color=CUST_AGE_Quant,y=Prob)) +geom_boxplot()+
+#   scale_color_discrete(name="Age(qu)") +labs(title="Scored Distribution (Age Qu) ", x="Probability",outlier.color="black"
+#                                             )
+# #ggplotly(Total_Box)
+# 
+# pl_Age_Box=ggplotly(Age_Box)
+# #
+# subplot(pl_Age_Dens,pl_Age_Box)
+# #
+# #---------------------------------------------------------------------------------------------------------------------------
+# #
+```
+
+### Acc Age  Prob Dist
+
+```{r Acc Age  Prob Dist}
+
+#---------------------------------------------------------------------------------------------------------------------------
+#
+##                                                   DENSITY  ON CUST ACCOUNT AGE 
+#
+#  We First Dio Some Exploratory Data Analysis 
+# ACC_AGE_Dens=ggplot(Final_Prediction_List_Desc_prob_V3[,],aes(x=Prob,color=ACC_AGE_M_Quant)) +geom_density()+
+#   scale_color_discrete(name="Acc_Age") +labs(title="Scored Probability Density (Acc Age Quant) ", x="Probability"
+#                                             )
+# #
+# pl_ACC_AGE_Dens=ggplotly(ACC_AGE_Dens)
+# #
+#                                                     BOX PLOT On ACCOUNT AGE 
+#
+# ACC_AGE_Box=ggplot(Final_Prediction_List_Desc_prob_V3[,],aes(x=ACC_AGE_M_Quant,color=ACC_AGE_M_Quant,y=Prob)) +geom_boxplot()+
+#   scale_color_discrete(name="Acc Age") +labs(title="Scored Probability Density (ACC_AGE_M_Quant) ", x="Probability")
+# #
+# pl_ACC_AGE_Box=ggplotly(ACC_AGE_Box)
+# #
+# subplot(pl_ACC_AGE_Dens,pl_ACC_AGE_Box)
+#
+#-----------------------------------------------------------------------------------------------------------------------------
+
+
+```
+
+Credit Limit and Float
+----------------------------------------------------------
+
+### Credit Limit Prob Dist 
+
+```{r Credit Limit Prob Dist}
+
+#-----------------------------------------------------------------------------------------------------------------------------
+#
+#                                                        DENSITY  ON CR_LIM_AMT
+#
+# CR_LIM_AMT_Quant_Dens=ggplot(Final_Prediction_List_Desc_prob_V3[,],aes(x=Prob,color=CR_LIM_AMT_Quant)) +geom_density()+
+#   scale_color_discrete(name="Cr Lim") +labs(title="Scored Probability Density  (CR_LIM_AMT_Quant) ", x="Probability")#
+# pl_CR_LIM_AMT_Quant_Dens=ggplotly(CR_LIM_AMT_Quant_Dens)
+# #
+# #                                                     BOX PLOT On CR_LIM_AMT
+# #
+# CR_LIM_AMT_Quant_Box=ggplot(Final_Prediction_List_Desc_prob_V3[,],aes(x=CR_LIM_AMT_Quant,color=CR_LIM_AMT_Quant,y=Prob)) +geom_boxplot()+
+#   scale_color_discrete(name="CR Lim") +labs(title="Scored Probability Density (CR_LIM_AMT_Quant) ", x="Probability"
+#                                             )
+# #
+# pl_CR_LIM_AMT_Quant_Box=ggplotly(CR_LIM_AMT_Quant_Box)
+# #
+# subplot(pl_CR_LIM_AMT_Quant_Dens,pl_CR_LIM_AMT_Quant_Box)
+# #
+# #--------------------------------------------------------------------------------------------------------------------------------
+
+```
+
+### Float Prob Dist 
+
+```{r Float Prob Dist }
+
+#--------------------------------------------------------------------------------------------------------------------------------
+#
+#                                                     PROBABILITY ON MAX_FLOAT5_Quant
+#
+# MAX_FLOAT5_Quant_Dens=ggplot(Final_Prediction_List_Desc_prob_V3[,],aes(x=Prob,color=MAX_FLOAT5_Quant)) +geom_density()+
+#   scale_color_discrete(name="Max Float (Q)") +labs(title="Scored Probability Density (MAX_FLOAT5_Quant)  ", x="Probability")#
+# pl_MAX_FLOAT5_Quant_Dens=ggplotly(MAX_FLOAT5_Quant_Dens)
+# #                                                     BOX PLOT On MAX_FLOAT5_Quant
+# #
+# MAX_FLOAT5_Quant_Box=ggplot(Final_Prediction_List_Desc_prob_V3[,],aes(x=MAX_FLOAT5_Quant,color=MAX_FLOAT5_Quant,y=Prob)) +geom_boxplot()+
+#   scale_color_discrete(name="Max Float (Q)") +labs(title="Scored Probability Density (MAX_FLOAT5_Quant) ", x="Probability")
+# #
+# pl_MAX_FLOAT5_Quant_Box=ggplotly(MAX_FLOAT5_Quant_Box)
+# #
+# subplot(pl_MAX_FLOAT5_Quant_Dens,pl_MAX_FLOAT5_Quant_Box)
+# #
+# ######################################################################################################################################
+# # 
+
+
+```
+
+
+Group5: Int1 Age/Acc_Age (Sex/Occ/Prov) {data-navmenu=Scored_Vars}
+===================================================
+
+Age/Acc Age (Male/zz/Gauteng)
+----------------------------------------------------------
+
+### Age and Account Age (Male)
+
+```{r Age and Account Age  Male}
+# Data Read in At the Top 
+##################################################################################################################################
+#                                                   DENSITY FUNCTIONs AND BOX PLOTS ON DIMENSIONS 
+###################################################################################################################################
+#
+#                                                   TESTING THE CONTOLS
+#
+# Sample_Predict=sample_n(Final_Prediction_List_Desc_prob_V3,10000) #%>%select(Prob,CUST_AGE_Quant,ACC_AGE_M_Quant,Occupation_New,Province_New,CUST_SEX_CDE)
+# 
+# #
+# Sample_Predict_Male=Sample_Predict%>%filter(CUST_SEX_CDE=="M")
+# Sample_Predict_Female=Sample_Predict%>%filter(CUST_SEX_CDE=="F")
+# #
+# # Male
+# shared_Sample_Predict_Male=SharedData$new(Sample_Predict_Male)
+# shared_Sample_Predict_Female=SharedData$new(Sample_Predict_Female)
+# 
+# 
+# 
+# pl_Sample_Predict_Male=plot_ly(shared_Sample_Predict_Male, x = ~CUST_AGE_Quant, y = ~Prob, color = ~ACC_AGE_M_Quant, type = "box")%>%
+#    layout(boxmode = "group")
+# 
+# pl_Sample_Predict_Female=plot_ly(shared_Sample_Predict_Female, x = ~CUST_AGE_Quant, y = ~Prob, color = ~ACC_AGE_M_Quant, type = "box")%>%
+#    layout(boxmode = "group")
+# 
+# 
+# 
+# # #subplot(pl_Box_Age_Acc_Age_Sex_Male,pl_Box_Age_Acc_Age_Sex_Female)
+# # bscols(widths=c(NA,NA),
+# #        #list(
+# #             #filter_checkbox(id="Cust_AgeID",label="Cust_Age",shared_Sex_AGE_ACC_PROV_OCC_Male,~CUST_AGE_Quant),
+# #             #filter_checkbox(id="Acc_Age_ID",label="Acc_Age",shared_Sex_AGE_ACC_PROV_OCC_Male,~ACC_AGE_M_Quant)),
+# #             pl_Box_Age_Acc_Age_Sex_Male%>%hide_legend(),
+# #        pl_Box_Age_Acc_Age_Sex_Female%>%hide_legend()
+# #             )
+# 
+# #pl_Box_Age_Acc_Age_Sex_Female
+# #
+# #---------------------------------------------------------------------------------------------------------------------------
+# #
+# legendtitle=list(yref='paper',xref="paper",y=0.5,x=1.15,text="Acc Age",showarrow=F)
+# pl_Sample_Predict_Male%>%layout(title="Age/Acc Age (Male)",annotations=legendtitle)
+```
+
+
+### Age/Acc_Age (Occupation = zz)
+
+```{r Age/Acc_Age zz}
+# #Sample_Predict=sample_n(Final_Prediction_List_Desc_prob_V3,10000) #%>%select(Prob,CUST_AGE_Quant,ACC_AGE_M_Quant,Occupation_New,Province_New,CUST_SEX_CDE)
+# 
+# #
+# Sample_Predict_Occ_zz=Sample_Predict%>%filter(Occupation_New=="ZZ")
+# Sample_Predict_Occ_Other=Sample_Predict%>%filter(Occupation_New=="Other")
+# #
+# # Male
+# shared_Sample_Predict_Occ_zz=SharedData$new(Sample_Predict_Occ_zz)
+# shared_Sample_Predict_Occ_Other=SharedData$new(Sample_Predict_Occ_Other)
+# 
+# 
+# 
+# pl_Sample_Predict_Occ_zz=plot_ly(shared_Sample_Predict_Occ_zz, x = ~CUST_AGE_Quant, y = ~Prob, color = ~ACC_AGE_M_Quant, type = "box")%>%
+#    layout(boxmode = "group")
+# 
+# pl_Sample_Predict_Occ_Other=plot_ly(shared_Sample_Predict_Occ_Other, x = ~CUST_AGE_Quant, y = ~Prob, color = ~ACC_AGE_M_Quant, type = "box")%>%
+#    layout(boxmode = "group")
+# 
+# 
+# 
+# # #subplot(pl_Box_Age_Acc_Age_Sex_Male,pl_Box_Age_Acc_Age_Sex_Female)
+# # bscols(widths=c(NA,NA),
+# #        #list(
+# #             #filter_checkbox(id="Cust_AgeID",label="Cust_Age",shared_Sex_AGE_ACC_PROV_OCC_Male,~CUST_AGE_Quant),
+# #             #filter_checkbox(id="Acc_Age_ID",label="Acc_Age",shared_Sex_AGE_ACC_PROV_OCC_Male,~ACC_AGE_M_Quant)),
+# #             pl_Box_Age_Acc_Age_Sex_Male%>%hide_legend(),
+# #        pl_Box_Age_Acc_Age_Sex_Female%>%hide_legend()
+# #             )
+# 
+# #pl_Box_Age_Acc_Age_Sex_Female
+# #
+# #---------------------------------------------------------------------------------------------------------------------------
+# #
+# legendtitle=list(yref='paper',xref="paper",y=0.5,x=1.15,text="Acc Age",showarrow=F)
+# pl_Sample_Predict_Occ_zz%>%layout(title="Age/Acc Age Occupation(ZZ)",annotations=legendtitle)
+```
+
+### Age and Account Age (Province = Gauteng)
+
+```{r Age and Account Age  Prov Gauteng}
+# # Data Read in At the Top 
+# ##################################################################################################################################
+# #                                                   PROVINCE  (Gauteng Vs Other )
+# ###################################################################################################################################
+# #
+# #                                                   TESTING THE CONTOLS
+# #
+# #Sample_Predict=sample_n(Final_Prediction_List_Desc_prob_V3,10000) #%>%select(Prob,CUST_AGE_Quant,ACC_AGE_M_Quant,Occupation_New,Province_New,CUST_SEX_CDE)
+# 
+# #
+# Sample_Predict_Prov_Gauteng=Sample_Predict%>%filter(Province_New=="GP - Gauteng")
+# Sample_Predict_Prov_Other=Sample_Predict%>%filter(Province_New=="Other")
+# #
+# # Male
+# shared_Sample_Predict_Prov_Gauteng=SharedData$new(Sample_Predict_Prov_Gauteng)
+# shared_Sample_Predict_Prov_Other=SharedData$new(Sample_Predict_Prov_Other)
+# 
+# 
+# 
+# pl_Sample_Predict_Prov_Gauteng=plot_ly(shared_Sample_Predict_Prov_Gauteng, x = ~CUST_AGE_Quant, y = ~Prob, color = ~ACC_AGE_M_Quant, type = "box")%>%
+#    layout(boxmode = "group")
+# 
+# pl_Sample_Predict_Prov_Other=plot_ly(shared_Sample_Predict_Prov_Other, x = ~CUST_AGE_Quant, y = ~Prob, color = ~ACC_AGE_M_Quant, type = "box")%>%
+#    layout(boxmode = "group")
+# 
+# 
+# 
+# # #subplot(pl_Box_Age_Acc_Age_Sex_Male,pl_Box_Age_Acc_Age_Sex_Female)
+# # bscols(widths=c(NA,NA),
+# #        #list(
+# #             #filter_checkbox(id="Cust_AgeID",label="Cust_Age",shared_Sex_AGE_ACC_PROV_OCC_Male,~CUST_AGE_Quant),
+# #             #filter_checkbox(id="Acc_Age_ID",label="Acc_Age",shared_Sex_AGE_ACC_PROV_OCC_Male,~ACC_AGE_M_Quant)),
+# #             pl_Box_Age_Acc_Age_Sex_Male%>%hide_legend(),
+# #        pl_Box_Age_Acc_Age_Sex_Female%>%hide_legend()
+# #             )
+# 
+# #pl_Box_Age_Acc_Age_Sex_Female
+# #
+# #---------------------------------------------------------------------------------------------------------------------------
+# #
+# legendtitle=list(yref='paper',xref="paper",y=0.5,x=1.15,text="Acc Age",showarrow=F)
+# pl_Sample_Predict_Prov_Gauteng%>%layout(title="Age/Acc Age (Gauteng)",annotations=legendtitle)
+
+```
+
+
+
+Age/Account Age/ (Female/Other/Other)
+-----------------------------------------------------
+
+### Age Account Age (Female )
+
+```{r Age Account Age Female}
+# #
+# legendtitle=list(yref='paper',xref="paper",y=0.5,x=1.15,text="Acc Age",showarrow=F)
+# pl_Sample_Predict_Female%>%layout(title="Age/Acc Age (Female)",annotations=legendtitle)
+```
+
+
+### Age / Account Age - Occupation (Other)
+
+```{r Age Account Occupation Other}
+# #
+# legendtitle=list(yref='paper',xref="paper",y=0.5,x=1.15,text="Acc Age",showarrow=F)
+# pl_Sample_Predict_Occ_Other%>%layout(title="Age/Acc Age Occupation(Other)",annotations=legendtitle)
+```
+
+
+### Age / Account Age - Province (Other)
+ 
+```{r Account Age Province Other}
+# legendtitle=list(yref='paper',xref="paper",y=0.5,x=1.15,text="Acc Age",showarrow=F)
+# pl_Sample_Predict_Prov_Other%>%layout(title="Age/Acc Age Province(Other)",annotations=legendtitle)
+```
+
+
+Decision Trees {data-navmenu=Decision_Trees}
+=======================================================================
+
+
+GLM_INT  Tree  and Full Tree   {data-width=500}
+-----------------------------------------------------------------------
+
+### Simple Tree Model
+
+```{r GLM_INT  Tree  }
+Tree_model_glm_min_Int=readRDS("./Data/Tree_model_glm_min_Int.RDS")
+
+
+# dt.model_all_params=rpart(formula=formula.init,method="class",data=trainset_IND_F,
+#                control=rpart.control(minsplit=20,cp=0.01))
+
+
+
+#################################################
+#  
+
+rpart.plot(Tree_model_glm_min_Int)
+
+```
+
+### Full Tree
+
+```{r Full Tree }
+
+#LETS TRY THE FUL DATA SET MODEL
+
+dt.model_all_params=readRDS("./Data/dt.model_all_param.RDS")
+
+# confusion_matrix_simple=readRDS("confusion_matrix_simple.RDS")
+# confusion_matrix_simple
+rpart.plot(dt.model_all_params)
+
+```
+
+
+Rules GLM_INT  Tree  and Full Tree {data-width=500}
+-----------------------------------------------------------------------
+
+
+### Rules Tree_min_glm_Int
+
+```{r Rules Tree_min_glm_Int  }
+
+# Displar the Rules For Tree_min_glm_Int
+Tree_model_glm_min_Int
+
+```
+
+### Rules Full Tree
+
+```{r Simple Tree Plot  }
+# rpart.plot(dt.model_simple)
+dt.model_all_params
+```
+
+
+Complex Decision Tree {data-navmenu=Decision_Trees}
+=======================================================================
+
+
+
+Complex Tree Model and Confusion Matrix {data-width=500}
+-----------------------------------------------------------------------
+
+### Complex Tree Model 
+
+```{r Complex Tree Model}
+# dt.model_complex=readRDS("dt.model_complex.RDS")
+# dt.model_complex
+
+
+```
+
+
+### Complex Tree Confusion Matrix
+
+```{r Complex Tree Confusion Matrix  }
+# confusion_matrix_complex=readRDS("confusion_matrix_complex.RDS")
+# confusion_matrix_complex
+
+
+
+```
+
+Complex ROC  and PLOT {data-width=500}
+-----------------------------------------------------------------------
+
+### Complex Tree ROC
+
+```{r Complex Tree ROC}
+
+# dt.predictions_complex.prob=predict(dt.model_complex,test.data,type="prob")
+# 
+# dt.predictions_complex.prob_1=dt.predictions_complex.prob[,2]
+# 
+# library(caTools)
+# #
+# colAUC(dt.predictions_complex.prob_1,test.data.class,plotROC = TRUE)
+
+```
+
+
+### Complex Tree Plot
+
+```{r Complex Tree Plot  }
+# rpart.plot(dt.model_complex)
+
+```
+
